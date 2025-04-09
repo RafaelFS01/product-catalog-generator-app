@@ -14,6 +14,7 @@ import ProductDetails from "./pages/ProductDetails";
 import CreateProduct from "./pages/CreateProduct";
 import EditProduct from "./pages/EditProduct";
 import Settings from "./pages/Settings";
+import Dashboard from "./pages/Dashboard";
 import { MainLayout } from "./components/layout/MainLayout";
 import { RequireAuth } from "./components/auth/RequireAuth";
 
@@ -41,6 +42,7 @@ const App = () => (
                 <Route path="cadastrar" element={<CreateProduct />} />
                 <Route path="editar/:id" element={<EditProduct />} />
                 <Route path="configuracoes" element={<Settings />} />
+                <Route path="dashboard" element={<Dashboard />} />
               </Route>
               
               <Route path="*" element={<NotFound />} />

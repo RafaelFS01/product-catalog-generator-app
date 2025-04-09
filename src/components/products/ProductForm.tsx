@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -76,7 +75,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({ editingProduct, isEdit
         navigate(`/detalhes/${editingProduct.id}`);
       } else {
         const newProduct = await createProduct({
-          ...data,
+          nome: data.nome,
+          peso: data.peso,
+          precoFardo: data.precoFardo,
+          precoUnitario: data.precoUnitario,
+          qtdFardo: data.qtdFardo,
           imagePath
         });
         navigate(`/detalhes/${newProduct.id}`);
