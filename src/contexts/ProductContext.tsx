@@ -1,10 +1,9 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { ref, get, set, update, remove, push, query, orderByChild } from 'firebase/database';
+import { db } from '@/lib/firebase';
 import { Product, CatalogConfig } from '@/types';
 import { useToast } from '@/components/ui/use-toast';
-
-// Mocked API base URL - In a real app, this would come from environment variables
-const API_BASE_URL = 'https://api.example.com';
 
 interface ProductContextProps {
   products: Product[];
@@ -21,34 +20,8 @@ interface ProductContextProps {
 
 const ProductContext = createContext<ProductContextProps | undefined>(undefined);
 
-// Mock products data for development
-const mockProducts: Product[] = [
-  {
-    id: '1',
-    nome: 'Arroz Branco Premium Tipo 1',
-    peso: '5 kg',
-    precoFardo: 149.90,
-    precoUnitario: 24.98,
-    qtdFardo: 6,
-    imagePath: '/placeholder.svg',
-    timestampCriacao: Date.now(),
-    timestampAtualizacao: Date.now()
-  },
-  {
-    id: '2',
-    nome: 'Feijão Carioca',
-    peso: '1 kg',
-    precoFardo: 89.94,
-    precoUnitario: 7.49,
-    qtdFardo: 12,
-    imagePath: '/placeholder.svg',
-    timestampCriacao: Date.now() - 86400000,
-    timestampAtualizacao: Date.now() - 86400000
-  }
-];
-
-// Mock catalog config
-const mockCatalogConfig: CatalogConfig = {
+// Initial catalog config
+const initialCatalogConfig: CatalogConfig = {
   logoPath: '/placeholder.svg',
   corFundoPdf: '#ffd210'
 };
@@ -56,19 +29,52 @@ const mockCatalogConfig: CatalogConfig = {
 export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [catalogConfig, setCatalogConfig] = useState<CatalogConfig>(mockCatalogConfig);
+  const [catalogConfig, setCatalogConfig] = useState<CatalogConfig>(initialCatalogConfig);
   const { toast } = useToast();
+
+  // Fetch catalog config on mount
+  useEffect(() => {
+    const fetchCatalogConfig = async () => {
+      try {
+        const configRef = ref(db, 'configuracoesCatalogo');
+        const snapshot = await get(configRef);
+        
+        if (snapshot.exists()) {
+          setCatalogConfig(snapshot.val());
+        } else {
+          // If no config exists, initialize it
+          await set(configRef, initialCatalogConfig);
+        }
+      } catch (error) {
+        console.error('Error fetching catalog config:', error);
+        toast({
+          title: "Erro ao carregar configurações",
+          description: error instanceof Error ? error.message : "Erro desconhecido",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchCatalogConfig();
+  }, [toast]);
 
   const fetchProducts = async (): Promise<void> => {
     setIsLoading(true);
     try {
-      // In a real app, this would be an API call
-      // const response = await fetch(`${API_BASE_URL}/api/products`);
-      // const data = await response.json();
-      // setProducts(data);
+      const productsRef = ref(db, 'produtos');
+      const snapshot = await get(productsRef);
       
-      // Using mock data for now
-      setProducts(mockProducts);
+      if (snapshot.exists()) {
+        const productsData = snapshot.val();
+        const productsArray: Product[] = Object.keys(productsData).map(key => ({
+          id: key,
+          ...productsData[key]
+        }));
+        
+        setProducts(productsArray);
+      } else {
+        setProducts([]);
+      }
       setIsLoading(false);
     } catch (error) {
       toast({
@@ -86,32 +92,30 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const createProduct = async (product: Omit<Product, 'id' | 'timestampCriacao' | 'timestampAtualizacao'>): Promise<Product> => {
     try {
-      // In a real app, this would be an API call
-      // const response = await fetch(`${API_BASE_URL}/api/products`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json'
-      //   },
-      //   body: JSON.stringify(product)
-      // });
-      // const data = await response.json();
+      const timestamp = Date.now();
+      const newProductRef = push(ref(db, 'produtos'));
       
-      // Using mock data for now
-      const newProduct: Product = {
+      const newProduct: Omit<Product, 'id'> = {
         ...product,
-        id: Math.random().toString(36).substring(2, 9),
-        timestampCriacao: Date.now(),
-        timestampAtualizacao: Date.now()
+        timestampCriacao: timestamp,
+        timestampAtualizacao: timestamp
       };
       
-      setProducts(prevProducts => [...prevProducts, newProduct]);
+      await set(newProductRef, newProduct);
+      
+      const createdProduct: Product = {
+        id: newProductRef.key as string,
+        ...newProduct
+      };
+      
+      setProducts(prevProducts => [...prevProducts, createdProduct]);
       
       toast({
         title: "Produto criado",
-        description: `"${newProduct.nome}" foi adicionado com sucesso.`
+        description: `"${createdProduct.nome}" foi adicionado com sucesso.`
       });
       
-      return newProduct;
+      return createdProduct;
     } catch (error) {
       toast({
         title: "Erro ao criar produto",
@@ -124,26 +128,22 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const updateProduct = async (id: string, product: Partial<Product>): Promise<Product> => {
     try {
-      // In a real app, this would be an API call
-      // const response = await fetch(`${API_BASE_URL}/api/products/${id}`, {
-      //   method: 'PUT',
-      //   headers: {
-      //     'Content-Type': 'application/json'
-      //   },
-      //   body: JSON.stringify(product)
-      // });
-      // const data = await response.json();
-      
-      // Using mock data for now
       const existingProduct = products.find(p => p.id === id);
       if (!existingProduct) {
         throw new Error('Produto não encontrado');
       }
       
-      const updatedProduct: Product = {
-        ...existingProduct,
+      const updatedFields = {
         ...product,
         timestampAtualizacao: Date.now()
+      };
+      
+      const productRef = ref(db, `produtos/${id}`);
+      await update(productRef, updatedFields);
+      
+      const updatedProduct: Product = {
+        ...existingProduct,
+        ...updatedFields
       };
       
       setProducts(prevProducts => 
@@ -168,16 +168,13 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const deleteProduct = async (id: string): Promise<boolean> => {
     try {
-      // In a real app, this would be an API call
-      // await fetch(`${API_BASE_URL}/api/products/${id}`, {
-      //   method: 'DELETE'
-      // });
-      
-      // Using mock data for now
       const productToDelete = products.find(p => p.id === id);
       if (!productToDelete) {
         throw new Error('Produto não encontrado');
       }
+      
+      const productRef = ref(db, `produtos/${id}`);
+      await remove(productRef);
       
       setProducts(prevProducts => prevProducts.filter(p => p.id !== id));
       
@@ -199,17 +196,9 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const uploadImage = async (file: File): Promise<string> => {
     try {
-      // In a real app, this would be an API call to upload the image
-      // const formData = new FormData();
-      // formData.append('productImage', file);
-      // const response = await fetch(`${API_BASE_URL}/api/upload-image`, {
-      //   method: 'POST',
-      //   body: formData
-      // });
-      // const data = await response.json();
-      // return data.filePath;
-      
-      // Mock image upload - just return placeholder for now
+      // Note: In a real implementation with a backend, we would upload the file to a server
+      // For now, we'll just return a placeholder
+      // This function would be replaced by actual backend file upload functionality
       return '/placeholder.svg';
     } catch (error) {
       toast({
@@ -223,21 +212,13 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const updateCatalogConfig = async (config: Partial<CatalogConfig>): Promise<CatalogConfig> => {
     try {
-      // In a real app, this would be an API call
-      // const response = await fetch(`${API_BASE_URL}/api/configuracoes`, {
-      //   method: 'PUT',
-      //   headers: {
-      //     'Content-Type': 'application/json'
-      //   },
-      //   body: JSON.stringify(config)
-      // });
-      // const data = await response.json();
-      
-      // Using mock data for now
       const updatedConfig = {
         ...catalogConfig,
         ...config
       };
+      
+      const configRef = ref(db, 'configuracoesCatalogo');
+      await update(configRef, config);
       
       setCatalogConfig(updatedConfig);
       

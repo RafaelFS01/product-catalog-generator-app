@@ -17,37 +17,72 @@ import {
 } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Package } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { auth } from '@/lib/firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { useToast } from '@/components/ui/use-toast';
 
-const loginSchema = z.object({
+const authSchema = z.object({
   email: z.string().email('Email inválido'),
   password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
 });
 
-type LoginFormValues = z.infer<typeof loginSchema>;
+type AuthFormValues = z.infer<typeof authSchema>;
 
 const Login: React.FC = () => {
   const { login, user, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
   
   const from = (location.state as any)?.from?.pathname || '/gerenciar';
   
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+  const loginForm = useForm<AuthFormValues>({
+    resolver: zodResolver(authSchema),
     defaultValues: {
       email: '',
       password: '',
     },
   });
   
-  const onSubmit = async (data: LoginFormValues) => {
+  const registerForm = useForm<AuthFormValues>({
+    resolver: zodResolver(authSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
+  
+  const onLoginSubmit = async (data: AuthFormValues) => {
     setIsSubmitting(true);
     try {
       const success = await login(data.email, data.password);
       if (success) {
         navigate(from, { replace: true });
       }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  const onRegisterSubmit = async (data: AuthFormValues) => {
+    setIsSubmitting(true);
+    try {
+      await createUserWithEmailAndPassword(auth, data.email, data.password);
+      toast({
+        title: "Conta criada com sucesso",
+        description: "Você foi cadastrado e já pode fazer login.",
+      });
+      loginForm.setValue('email', data.email);
+      loginForm.setValue('password', data.password);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      toast({
+        title: "Erro ao criar conta",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -67,66 +102,121 @@ const Login: React.FC = () => {
           <div>
             <CardTitle className="text-2xl">Catálogo de Produtos</CardTitle>
             <CardDescription className="mt-1">
-              Faça login para acessar o sistema
+              Faça login ou cadastre-se para acessar o sistema
             </CardDescription>
           </div>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="seu@email.com" 
-                        type="email" 
-                        autoComplete="email"
-                        disabled={isSubmitting}
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Senha</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="••••••" 
-                        type="password" 
-                        autoComplete="current-password"
-                        disabled={isSubmitting}
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button 
-                type="submit" 
-                className="w-full mt-6" 
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Entrando...' : 'Entrar'}
-              </Button>
-            </form>
-          </Form>
-          
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            <p>
-              Demonstração: Use qualquer email e senha com pelo menos 6 caracteres
-            </p>
-          </div>
+          <Tabs defaultValue="login" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="login">Login</TabsTrigger>
+              <TabsTrigger value="register">Cadastro</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="login">
+              <Form {...loginForm}>
+                <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+                  <FormField
+                    control={loginForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="seu@email.com" 
+                            type="email" 
+                            autoComplete="email"
+                            disabled={isSubmitting}
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={loginForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Senha</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="••••••" 
+                            type="password" 
+                            autoComplete="current-password"
+                            disabled={isSubmitting}
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button 
+                    type="submit" 
+                    className="w-full mt-6" 
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? 'Entrando...' : 'Entrar'}
+                  </Button>
+                </form>
+              </Form>
+            </TabsContent>
+            
+            <TabsContent value="register">
+              <Form {...registerForm}>
+                <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
+                  <FormField
+                    control={registerForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="seu@email.com" 
+                            type="email" 
+                            autoComplete="email"
+                            disabled={isSubmitting}
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={registerForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Senha</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="••••••" 
+                            type="password" 
+                            autoComplete="new-password"
+                            disabled={isSubmitting}
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button 
+                    type="submit" 
+                    className="w-full mt-6" 
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? 'Cadastrando...' : 'Cadastrar'}
+                  </Button>
+                </form>
+              </Form>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>

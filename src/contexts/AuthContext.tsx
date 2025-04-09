@@ -1,5 +1,13 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { 
+  User as FirebaseUser,
+  signInWithEmailAndPassword, 
+  signOut,
+  onAuthStateChanged,
+  createUserWithEmailAndPassword
+} from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import { AuthUser } from '@/types';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -18,38 +26,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is already logged in
-    const storedUser = localStorage.getItem('authUser');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    // Subscribe to auth state changes
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        const authUser: AuthUser = {
+          email: firebaseUser.email || '',
+          isAuthenticated: true
+        };
+        setUser(authUser);
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
+    });
+
+    // Cleanup subscription
+    return () => unsubscribe();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // Mock login - In real app, this would be a Firebase Auth call
-      if (email && password) {
-        const user: AuthUser = {
-          email,
-          isAuthenticated: true
-        };
-        localStorage.setItem('authUser', JSON.stringify(user));
-        setUser(user);
-        toast({
-          title: "Login realizado com sucesso",
-          description: `Bem-vindo, ${email}!`,
-        });
-        setIsLoading(false);
-        return true;
-      } else {
-        throw new Error('Credenciais inválidas');
-      }
+      await signInWithEmailAndPassword(auth, email, password);
+      toast({
+        title: "Login realizado com sucesso",
+        description: `Bem-vindo, ${email}!`,
+      });
+      setIsLoading(false);
+      return true;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
       toast({
         title: "Erro no login",
-        description: error instanceof Error ? error.message : "Erro desconhecido",
+        description: errorMessage,
         variant: "destructive",
       });
       setIsLoading(false);
@@ -57,13 +66,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('authUser');
-    setUser(null);
-    toast({
-      title: "Logout realizado",
-      description: "Você foi desconectado com sucesso."
-    });
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      toast({
+        title: "Logout realizado",
+        description: "Você foi desconectado com sucesso."
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      toast({
+        title: "Erro ao fazer logout",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
