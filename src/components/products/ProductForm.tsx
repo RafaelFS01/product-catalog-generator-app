@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useProducts } from '@/contexts/ProductContext';
-import { Product } from '@/types';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
+import { useProducts } from '../../contexts/ProductContext';
+import { Product } from '../../types';
 import { useNavigate } from 'react-router-dom';
 import { Upload, Save, ArrowLeft } from 'lucide-react';
 
@@ -27,11 +27,12 @@ interface ProductFormProps {
 }
 
 export const ProductForm: React.FC<ProductFormProps> = ({ editingProduct, isEdit = false }) => {
-  const { createProduct, updateProduct, uploadImage } = useProducts();
+  const { createProduct, updateProduct } = useProducts();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(editingProduct?.imagePath || null);
   const navigate = useNavigate();
+  const inputFileRef = React.useRef<HTMLInputElement | null>(null);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -48,7 +49,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ editingProduct, isEdit
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedImage(file);
-      
       // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -62,11 +62,29 @@ export const ProductForm: React.FC<ProductFormProps> = ({ editingProduct, isEdit
     setIsSubmitting(true);
     try {
       let imagePath = editingProduct?.imagePath || '/placeholder.svg';
-      
+
       if (selectedImage) {
-        imagePath = await uploadImage(selectedImage);
+        // Upload da imagem
+        const formData = new FormData();
+        formData.append('productImage', selectedImage);
+
+        const backendUrl = import.meta.env.VITE_BACKEND_URL;
+        if (!backendUrl) throw new Error("VITE_BACKEND_URL não definida!");
+
+        const response = await fetch(`${backendUrl}/api/upload-image`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || `Falha no upload: ${response.statusText}`);
+        }
+
+        imagePath = result.filePath;
       }
-      
+
       if (isEdit && editingProduct) {
         await updateProduct(editingProduct.id, {
           ...data,
@@ -113,7 +131,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ editingProduct, isEdit
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="peso"
@@ -127,7 +145,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ editingProduct, isEdit
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="precoUnitario"
@@ -135,11 +153,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({ editingProduct, isEdit
                   <FormItem>
                     <FormLabel>Preço Unitário (R$)</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
+                      <Input
+                        type="number"
                         step="0.01"
-                        min="0" 
-                        placeholder="0.00" 
+                        min="0"
+                        placeholder="0.00"
                         {...field}
                         onChange={(e) => field.onChange(parseFloat(e.target.value))}
                       />
@@ -148,7 +166,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ editingProduct, isEdit
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="precoFardo"
@@ -156,11 +174,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({ editingProduct, isEdit
                   <FormItem>
                     <FormLabel>Preço do Fardo (R$)</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
+                      <Input
+                        type="number"
                         step="0.01"
-                        min="0" 
-                        placeholder="0.00" 
+                        min="0"
+                        placeholder="0.00"
                         {...field}
                         onChange={(e) => field.onChange(parseFloat(e.target.value))}
                       />
@@ -169,7 +187,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ editingProduct, isEdit
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="qtdFardo"
@@ -177,10 +195,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({ editingProduct, isEdit
                   <FormItem>
                     <FormLabel>Quantidade por Fardo</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        min="1" 
-                        placeholder="6" 
+                      <Input
+                        type="number"
+                        min="1"
+                        placeholder="6"
                         {...field}
                         onChange={(e) => field.onChange(parseInt(e.target.value))}
                       />
@@ -190,36 +208,36 @@ export const ProductForm: React.FC<ProductFormProps> = ({ editingProduct, isEdit
                 )}
               />
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <FormLabel htmlFor="product-image">Imagem do Produto</FormLabel>
                 <div className="mt-1 flex items-center gap-4">
                   {previewUrl && (
                     <div className="w-32 h-32 border rounded overflow-hidden flex items-center justify-center bg-muted">
-                      <img 
-                        src={previewUrl} 
-                        alt="Preview" 
-                        className="w-full h-full object-contain" 
+                      <img
+                        src={previewUrl}
+                        alt="Preview"
+                        className="w-full h-full object-contain"
                       />
                     </div>
                   )}
                   <div className="flex-1">
-                    <label htmlFor="product-image">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full"
-                      >
-                        <Upload size={16} className="mr-2" />
-                        {previewUrl ? 'Trocar Imagem' : 'Selecionar Imagem'}
-                      </Button>
-                    </label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => inputFileRef.current?.click()}
+                    >
+                      <Upload size={16} className="mr-2" />
+                      {previewUrl ? 'Trocar Imagem' : 'Selecionar Imagem'}
+                    </Button>
                     <Input
                       id="product-image"
                       type="file"
                       accept="image/*"
                       className="hidden"
+                      ref={inputFileRef}
                       onChange={handleImageChange}
                     />
                     <p className="mt-1 text-xs text-muted-foreground">
@@ -229,7 +247,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ editingProduct, isEdit
                 </div>
               </div>
             </div>
-            
+
             <div className="flex justify-end gap-4 pt-4">
               <Button
                 type="button"
@@ -239,8 +257,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({ editingProduct, isEdit
                 <ArrowLeft size={16} className="mr-2" />
                 Voltar
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={isSubmitting}
               >
                 <Save size={16} className="mr-2" />

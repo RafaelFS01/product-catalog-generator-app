@@ -1,185 +1,103 @@
-
+// src/pages/ProductDetails.tsx
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useProducts } from '@/contexts/ProductContext';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Edit, Trash2, ArrowLeft } from 'lucide-react';
-import { formatCurrency, formatDate } from '@/lib/utils';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle
-} from '@/components/ui/alert-dialog';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useProducts, Product } from '../contexts/ProductContext';
+import { Card, CardContent } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter } from '../components/ui/alert-dialog';
+
+const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+
+const getImageUrl = (path: string | undefined | null): string => {
+  if (path?.startsWith('/uploads/')) {
+    return `${backendUrl}${path}`;
+  }
+  return path || '/placeholder.svg';
+};
 
 const ProductDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { getProduct, deleteProduct } = useProducts();
-  const [isLoading, setIsLoading] = useState(true);
-  const [product, setProduct] = useState(id ? getProduct(id) : undefined);
+  const { products, deleteProduct } = useProducts();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const navigate = useNavigate();
-  
+
+  const product = products.find((p) => p.id === id);
+
   useEffect(() => {
-    if (id) {
-      const productData = getProduct(id);
-      setProduct(productData);
-      setIsLoading(false);
+    if (!product) {
+      // Produto não encontrado, pode redirecionar ou exibir mensagem
     }
-  }, [id, getProduct]);
-  
+  }, [product]);
+
   const handleDelete = async () => {
-    if (id) {
-      const success = await deleteProduct(id);
-      if (success) {
-        navigate('/gerenciar');
-      }
+    if (product) {
+      await deleteProduct(product.id);
+      setShowDeleteDialog(false);
+      navigate('/gerenciar');
     }
   };
-  
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-10 w-32" />
-        </div>
-        <Card>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="md:col-span-1">
-                <Skeleton className="h-72 w-full" />
-              </div>
-              <div className="md:col-span-2 space-y-6">
-                <Skeleton className="h-10 w-3/4" />
-                <div className="space-y-4">
-                  <Skeleton className="h-6 w-full" />
-                  <Skeleton className="h-6 w-full" />
-                  <Skeleton className="h-6 w-full" />
-                  <Skeleton className="h-6 w-full" />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-  
+
   if (!product) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-2xl font-semibold mb-4">Produto não encontrado</h2>
-        <p className="text-muted-foreground mb-6">O produto que você está procurando não existe ou foi removido.</p>
+        <p>Produto não encontrado.</p>
         <Button asChild>
-          <Link to="/gerenciar">
-            <ArrowLeft size={16} className="mr-2" />
-            Voltar para Gerenciar Produtos
-          </Link>
+          <Link to="/gerenciar">Voltar</Link>
         </Button>
       </div>
     );
   }
-  
+
+  const imageUrl = getImageUrl(product.imagePath);
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <h1 className="text-2xl font-bold">Detalhes do Produto</h1>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" asChild>
-            <Link to="/gerenciar">
-              <ArrowLeft size={16} className="mr-2" />
-              Voltar
-            </Link>
-          </Button>
-          <Button asChild>
-            <Link to={`/editar/${product.id}`}>
-              <Edit size={16} className="mr-2" />
-              Editar
-            </Link>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="text-destructive border-destructive hover:bg-destructive/10"
-            onClick={() => setShowDeleteDialog(true)}
-          >
-            <Trash2 size={16} className="mr-2" />
-            Excluir
-          </Button>
-        </div>
-      </div>
-      
+    <div className="max-w-2xl mx-auto py-8">
       <Card>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-1">
-              <div className="bg-muted rounded-md overflow-hidden flex items-center justify-center h-full p-4">
-                <img 
-                  src={product.imagePath} 
-                  alt={product.nome} 
-                  className="max-w-full max-h-72 object-contain" 
-                />
-              </div>
-            </div>
-            <div className="md:col-span-2 space-y-6">
-              <h2 className="text-2xl font-semibold">{product.nome}</h2>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Peso</p>
-                  <p className="font-medium">{product.peso}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Quantidade por Fardo</p>
-                  <p className="font-medium">{product.qtdFardo} unidades</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Preço Unitário</p>
-                  <p className="font-medium">{formatCurrency(product.precoUnitario)}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Preço do Fardo</p>
-                  <p className="font-medium">{formatCurrency(product.precoFardo)}</p>
-                </div>
-              </div>
-              
-              <Separator />
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                <div className="space-y-1">
-                  <p className="text-muted-foreground">Cadastrado em</p>
-                  <p>{formatDate(product.timestampCriacao)}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-muted-foreground">Última atualização</p>
-                  <p>{formatDate(product.timestampAtualizacao)}</p>
-                </div>
-              </div>
-            </div>
+        <div className="flex flex-col md:flex-row gap-6 p-6">
+          <div className="flex-shrink-0 flex items-center justify-center bg-muted rounded w-48 h-48">
+            <img
+              src={imageUrl}
+              alt={product.nome}
+              className="max-h-full max-w-full object-contain"
+              onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                (e.target as HTMLImageElement).src = '/placeholder.svg';
+                (e.target as HTMLImageElement).onerror = null;
+              }}
+            />
           </div>
-        </CardContent>
+          <CardContent className="flex-1">
+            <div className="font-bold text-2xl mb-2">{product.nome}</div>
+            <div className="mb-2">{product.descricao}</div>
+            <div className="mb-2">Preço: R$ {product.preco}</div>
+            <div className="mb-2">Peso: {product.peso}</div>
+            <div className="flex gap-2 mt-4">
+              <Button asChild variant="outline">
+                <Link to={`/editar/${product.id}`}>Editar</Link>
+              </Button>
+              <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
+                Excluir
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/gerenciar">Voltar</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </div>
       </Card>
-      
+
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir o produto "{product.nome}"? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
+            <h2>Confirmar Exclusão</h2>
           </AlertDialogHeader>
+          <p>Tem certeza que deseja excluir este produto?</p>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
               Excluir
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
