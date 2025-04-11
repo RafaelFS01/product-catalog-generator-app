@@ -44,10 +44,9 @@ const Settings: React.FC = () => {
         const formData = new FormData();
         formData.append('productImage', logoFile);
 
-        const backendUrl = import.meta.env.VITE_BACKEND_URL;
-        if (!backendUrl) throw new Error("VITE_BACKEND_URL não definida!");
+        const uploadUrl = `${window.location.origin}/api/upload-image`;
 
-        const response = await fetch(`${backendUrl}/api/upload-image`, {
+        const response = await fetch(uploadUrl, {
           method: 'POST',
           body: formData,
         });
