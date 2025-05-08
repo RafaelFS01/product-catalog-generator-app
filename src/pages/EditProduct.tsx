@@ -9,18 +9,18 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const EditProduct: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { products } = useProducts();
+  const { getProduct } = useProducts();
   const [isLoading, setIsLoading] = useState(true);
-  const [product, setProduct] = useState(() => products.find(p => p.id === id));
+  const [product, setProduct] = useState(id ? getProduct(id) : undefined);
   const navigate = useNavigate();
   
   useEffect(() => {
     if (id) {
-      const productData = products.find(p => p.id === id);
+      const productData = getProduct(id);
       setProduct(productData);
       setIsLoading(false);
     }
-  }, [id, products]);
+  }, [id, getProduct]);
   
   if (isLoading) {
     return (

@@ -1,20 +1,27 @@
-// src/lib/firebase.ts
-import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
-import { getDatabase, Database } from 'firebase/database';
 
+import { initializeApp } from 'firebase/app';
+import { getDatabase } from 'firebase/database';
+import { getAuth } from 'firebase/auth';
+
+// Firebase configuration
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  apiKey: "AIzaSyCafsB2vXkbIxoCBsKTUB72IE-ymw92KiQ",
+  authDomain: "catalog-generat.firebaseapp.com",
+  databaseURL: "https://catalog-generat-default-rtdb.firebaseio.com",
+  projectId: "catalog-generat",
+  storageBucket: "catalog-generat.firebasestorage.app",
+  messagingSenderId: "505433207966",
+  appId: "1:505433207966:web:1ea09e64c96e0337bf778f",
+  measurementId: "G-CP77G699V5"
 };
 
-const app: FirebaseApp = initializeApp(firebaseConfig);
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 
-export const auth: Auth = getAuth(app);
-export const db: Database = getDatabase(app);
-export default app;
+
+// Initialize Firebase services
+export const db = getDatabase(app);
+export const auth = getAuth(app);
+
+// Export for testing
+export const firebaseInstance = { app, db, auth };
