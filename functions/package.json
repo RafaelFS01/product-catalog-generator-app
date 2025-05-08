@@ -1,0 +1,20 @@
+{
+  "name": "functions",
+  "description": "Backend Express migrado para Firebase Cloud Functions",
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "start": "firebase emulators:start --only functions",
+    "lint": "echo No lint configured"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "firebase-functions": "^4.4.1",
+    "firebase-admin": "^11.10.1",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^9.0.0"
+  }
+}

@@ -18,6 +18,7 @@ const Settings: React.FC = () => {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(catalogConfig.logoPath);
   const [bgColor, setBgColor] = useState(catalogConfig.corFundoPdf);
+  const logoInputRef = React.useRef<HTMLInputElement | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,23 +38,28 @@ const Settings: React.FC = () => {
   const handleSaveSettings = async () => {
     setIsSubmitting(true);
     try {
-      // In a real app, we would upload the logo first if it changed
-      // let logoPath = catalogConfig.logoPath;
-      // if (logoFile) {
-      //   // Upload logo and get path
-      //   const formData = new FormData();
-      //   formData.append('logoImage', logoFile);
-      //   const response = await fetch('API_URL/upload-logo', {
-      //     method: 'POST',
-      //     body: formData
-      //   });
-      //   const data = await response.json();
-      //   logoPath = data.filePath;
-      // }
-      
-      // For demo, just use the same path or preview
-      const logoPath = logoPreview || catalogConfig.logoPath;
-      
+      let logoPath = catalogConfig.logoPath;
+
+      if (logoFile) {
+        const formData = new FormData();
+        formData.append('productImage', logoFile);
+
+        const uploadUrl = `${window.location.origin}/api/upload-image`;
+
+        const response = await fetch(uploadUrl, {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || `Falha no upload: ${response.statusText}`);
+        }
+
+        logoPath = data.filePath;
+      }
+
       await updateCatalogConfig({
         logoPath,
         corFundoPdf: bgColor
@@ -91,21 +97,21 @@ const Settings: React.FC = () => {
                   </div>
                 )}
                 <div className="flex-1">
-                  <label htmlFor="logo-upload">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full"
-                    >
-                      <Upload size={16} className="mr-2" />
-                      {logoPreview ? 'Trocar Logo' : 'Selecionar Logo'}
-                    </Button>
-                  </label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => logoInputRef.current?.click()}
+                  >
+                    <Upload size={16} className="mr-2" />
+                    {logoPreview ? 'Trocar Logo' : 'Selecionar Logo'}
+                  </Button>
                   <Input
                     id="logo-upload"
                     type="file"
                     accept="image/*"
                     className="hidden"
+                    ref={logoInputRef}
                     onChange={handleLogoChange}
                   />
                   <p className="mt-1 text-xs text-muted-foreground">
