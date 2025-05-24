@@ -1,3 +1,4 @@
+
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useProducts } from '@/contexts/ProductContext';
@@ -43,44 +44,69 @@ export const PDFGenerator: React.FC<PDFGeneratorProps> = ({
     const productCount = productsToExport.length;
     const isFiltered = customProducts && customProducts.length !== allProducts.length;
     
-    toast.info(`Gerando PDF com ${productCount} produto${productCount !== 1 ? 's' : ''}${isFiltered ? ' (filtrado)' : ''}, por favor aguarde...`);
+    toast.info(`Gerando catálogo premium com ${productCount} produto${productCount !== 1 ? 's' : ''}${isFiltered ? ' (filtrado)' : ''}, por favor aguarde...`);
     
     try {
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       
-      // Add cover page
-      pdf.setFillColor(hexToRgb(catalogConfig.corFundoPdf).r, hexToRgb(catalogConfig.corFundoPdf).g, hexToRgb(catalogConfig.corFundoPdf).b);
-      pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+      // Cores do sistema
+      const colors = {
+        primary: [37, 99, 235], // #2563eb
+        secondary: [100, 116, 139], // #64748b
+        accent: [245, 158, 11], // #f59e0b
+        success: [16, 185, 129], // #10b981
+        background: [248, 250, 252], // #f8fafc
+        white: [255, 255, 255],
+        dark: [30, 41, 59] // #1e293b
+      };
       
-      // Add logo to cover if exists
+      // === CAPA ELEGANTE ===
+      // Gradiente de fundo
+      const gradientSteps = 50;
+      for (let i = 0; i < gradientSteps; i++) {
+        const ratio = i / gradientSteps;
+        const r = colors.primary[0] + (colors.background[0] - colors.primary[0]) * ratio;
+        const g = colors.primary[1] + (colors.background[1] - colors.primary[1]) * ratio;
+        const b = colors.primary[2] + (colors.background[2] - colors.primary[2]) * ratio;
+        
+        pdf.setFillColor(r, g, b);
+        pdf.rect(0, i * (pageHeight / gradientSteps), pageWidth, pageHeight / gradientSteps + 1, 'F');
+      }
+      
+      // Elementos decorativos - círculos geométricos
+      pdf.setFillColor(255, 255, 255, 0.1);
+      pdf.circle(pageWidth * 0.8, pageHeight * 0.2, 30, 'F');
+      pdf.circle(pageWidth * 0.2, pageHeight * 0.7, 20, 'F');
+      pdf.circle(pageWidth * 0.9, pageHeight * 0.8, 15, 'F');
+      
+      // Logo se existir
       if (catalogConfig.logoPath && catalogConfig.logoPath !== '/placeholder.svg') {
-        const logoImg = document.createElement('img');
-        logoImg.src = catalogConfig.logoPath;
-        
-        await new Promise((resolve) => {
-          logoImg.onload = resolve;
-          // Fallback if image fails to load
-          setTimeout(resolve, 1000);
-        });
-        
         try {
+          const logoImg = document.createElement('img');
+          logoImg.src = catalogConfig.logoPath;
+          logoImg.crossOrigin = 'anonymous';
+          
+          await new Promise((resolve) => {
+            logoImg.onload = resolve;
+            setTimeout(resolve, 1000);
+          });
+          
           const logoCanvas = await html2canvas(logoImg, { 
             allowTaint: true,
             useCORS: true
           });
           const logoImgData = logoCanvas.toDataURL('image/png');
           
-          // Calculate logo dimensions to fit nicely on the cover
-          const logoWidth = 60; // mm
+          const logoWidth = 50;
           const logoHeight = (logoCanvas.height * logoWidth) / logoCanvas.width;
           
           pdf.addImage(
             logoImgData, 
             'PNG', 
             (pageWidth - logoWidth) / 2, 
-            40, 
+            30, 
             logoWidth, 
             logoHeight
           );
@@ -89,137 +115,231 @@ export const PDFGenerator: React.FC<PDFGeneratorProps> = ({
         }
       }
       
-      // Add title to cover
-      pdf.setTextColor(0, 0, 0);
+      // Título hierárquico
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(32);
+      pdf.text('CATÁLOGO', pageWidth / 2, 100, { align: 'center' });
       pdf.setFontSize(24);
-      pdf.text('CATÁLOGO DE PRODUTOS', pageWidth / 2, 100, { align: 'center' });
+      pdf.text('DE PRODUTOS', pageWidth / 2, 115, { align: 'center' });
       
-      // Add product count and filter info
+      // Linha decorativa dourada
+      pdf.setDrawColor(...colors.accent);
+      pdf.setLineWidth(2);
+      pdf.line(pageWidth / 2 - 40, 125, pageWidth / 2 + 40, 125);
+      
+      // Box informativo
+      pdf.setFillColor(255, 255, 255, 0.95);
+      pdf.roundedRect(pageWidth / 2 - 60, 140, 120, 50, 5, 5, 'F');
+      
+      // Borda do box
+      pdf.setDrawColor(...colors.accent);
+      pdf.setLineWidth(1);
+      pdf.roundedRect(pageWidth / 2 - 60, 140, 120, 50, 5, 5, 'S');
+      
+      // Informações no box
+      pdf.setTextColor(...colors.dark);
       pdf.setFontSize(14);
       const subtitle = isFiltered 
-        ? `${productCount} produto${productCount !== 1 ? 's' : ''} selecionado${productCount !== 1 ? 's' : ''}`
-        : `${productCount} produto${productCount !== 1 ? 's' : ''} cadastrado${productCount !== 1 ? 's' : ''}`;
-      pdf.text(subtitle, pageWidth / 2, 110, { align: 'center' });
+        ? `📦 ${productCount} produto${productCount !== 1 ? 's' : ''} selecionado${productCount !== 1 ? 's' : ''}`
+        : `📦 ${productCount} produto${productCount !== 1 ? 's' : ''} cadastrado${productCount !== 1 ? 's' : ''}`;
+      pdf.text(subtitle, pageWidth / 2, 155, { align: 'center' });
       
-      // Add date to cover
       const today = new Date();
       pdf.setFontSize(12);
-      pdf.text(`Gerado em ${today.toLocaleDateString('pt-BR')}`, pageWidth / 2, 125, { align: 'center' });
+      pdf.text(`📅 ${today.toLocaleDateString('pt-BR')}`, pageWidth / 2, 170, { align: 'center' });
       
-      // Function to add page header
-      const addHeader = (pageNum: number) => {
-        pdf.setFillColor(hexToRgb(catalogConfig.corFundoPdf).r, hexToRgb(catalogConfig.corFundoPdf).g, hexToRgb(catalogConfig.corFundoPdf).b);
+      // Função para adicionar cabeçalho moderno
+      const addModernHeader = (pageNum: number) => {
+        // Faixa azul
+        pdf.setFillColor(...colors.primary);
         pdf.rect(0, 0, pageWidth, 20, 'F');
-        pdf.setTextColor(0, 0, 0);
+        
+        // Linha dourada
+        pdf.setFillColor(...colors.accent);
+        pdf.rect(0, 20, pageWidth, 2, 'F');
+        
+        // Ícone e título
+        pdf.setTextColor(255, 255, 255);
         pdf.setFontSize(10);
-        pdf.text(`Catálogo de Produtos - Página ${pageNum}`, 10, 15);
+        pdf.text('📚 Catálogo de Produtos', 15, 15);
+        
+        // Número da página em círculo
+        pdf.setFillColor(...colors.accent);
+        pdf.circle(pageWidth - 20, 11, 8, 'F');
+        
+        pdf.setTextColor(...colors.dark);
+        pdf.setFontSize(10);
+        pdf.text(`${pageNum}`, pageWidth - 20, 14, { align: 'center' });
+        
         if (isFiltered) {
-          pdf.text(`(${productCount} produtos filtrados)`, pageWidth - 10, 15, { align: 'right' });
+          pdf.setTextColor(255, 255, 255);
+          pdf.setFontSize(8);
+          pdf.text(`(${productCount} filtrados)`, pageWidth - 55, 15, { align: 'right' });
         }
       };
       
-      // Start adding products on new page
+      // Função para adicionar rodapé elegante
+      const addModernFooter = (currentPage: number, totalPages: number) => {
+        // Linha decorativa
+        pdf.setFillColor(...colors.accent);
+        pdf.rect(15, pageHeight - 15, pageWidth - 30, 1, 'F');
+        
+        pdf.setFontSize(8);
+        pdf.setTextColor(...colors.secondary);
+        pdf.text(`📅 Gerado em ${today.toLocaleDateString('pt-BR')}`, 15, pageHeight - 8);
+        pdf.text(`${currentPage} de ${totalPages}`, pageWidth - 15, pageHeight - 8, { align: 'right' });
+      };
+      
+      // Iniciar páginas de produtos
       pdf.addPage();
       let currentPage = 2;
-      addHeader(currentPage - 1);
+      addModernHeader(currentPage - 1);
       
-      // Process products in rows of 2
-      for (let i = 0; i < productsToExport.length; i += 2) {
-        const yPos = 30 + (Math.floor(i / 2) % 3) * 80;
-        
-        // Check if we need a new page
-        if (Math.floor(i / 2) % 3 === 0 && i > 0) {
+      // Layout 2x2 (4 produtos por página)
+      const productsPerPage = 4;
+      let productIndex = 0;
+      
+      for (let i = 0; i < productsToExport.length; i += productsPerPage) {
+        if (i > 0) {
           pdf.addPage();
           currentPage++;
-          addHeader(currentPage - 1);
+          addModernHeader(currentPage - 1);
         }
         
-        // Process current row (up to 2 products)
-        for (let j = 0; j < 2; j++) {
-          if (i + j < productsToExport.length) {
-            const product = productsToExport[i + j];
-            const xPos = 10 + j * (pageWidth / 2 - 15);
-            
-            // Product cell background
-            pdf.setFillColor(255, 255, 255);
-            pdf.roundedRect(xPos, yPos, pageWidth / 2 - 20, 75, 2, 2, 'F');
-            
-            // Product name
-            pdf.setFontSize(12);
-            pdf.setTextColor(0, 0, 0);
-            pdf.text(truncateText(product.nome, 25), xPos + 5, yPos + 10);
-            
-            // Product details
-            pdf.setFontSize(10);
-            pdf.setTextColor(80, 80, 80);
-            let detailY = yPos + 20;
-            
-            if (product.marca) {
-              pdf.text(`Marca: ${product.marca}`, xPos + 5, detailY);
-              detailY += 8;
-            }
-            
-            pdf.text(`Peso: ${product.peso}`, xPos + 5, detailY);
-            pdf.text(`Preço unitário: ${formatCurrency(product.precoUnitario)}`, xPos + 5, detailY + 8);
-            pdf.text(`Preço fardo: ${formatCurrency(product.precoFardo)}`, xPos + 5, detailY + 16);
-            pdf.text(`Qtd. por fardo: ${product.qtdFardo}`, xPos + 5, detailY + 24);
-            
-            // Try to add product image if available
-            if (product.imagePath && product.imagePath !== '/placeholder.svg') {
-              const imgPlaceholder = document.createElement('img');
-              imgPlaceholder.src = product.imagePath;
-              imgPlaceholder.style.width = '100px';
-              imgPlaceholder.style.height = '100px';
-              imgPlaceholder.style.objectFit = 'contain';
-              imgPlaceholder.crossOrigin = 'anonymous';
+        // Processar até 4 produtos por página
+        for (let j = 0; j < productsPerPage && (i + j) < productsToExport.length; j++) {
+          const product = productsToExport[i + j];
+          
+          // Posições para layout 2x2
+          const col = j % 2;
+          const row = Math.floor(j / 2);
+          const cardWidth = (pageWidth - 40) / 2;
+          const cardHeight = 85;
+          const xPos = 15 + col * (cardWidth + 10);
+          const yPos = 35 + row * (cardHeight + 15);
+          
+          // Card com sombra
+          pdf.setFillColor(200, 200, 200, 0.3);
+          pdf.roundedRect(xPos + 2, yPos + 2, cardWidth, cardHeight, 3, 3, 'F');
+          
+          // Card principal
+          pdf.setFillColor(...colors.white);
+          pdf.roundedRect(xPos, yPos, cardWidth, cardHeight, 3, 3, 'F');
+          
+          // Borda sutil
+          pdf.setDrawColor(...colors.background);
+          pdf.setLineWidth(0.5);
+          pdf.roundedRect(xPos, yPos, cardWidth, cardHeight, 3, 3, 'S');
+          
+          // Cabeçalho colorido do card
+          pdf.setFillColor(...colors.primary);
+          pdf.roundedRect(xPos, yPos, cardWidth, 15, 3, 3, 'F');
+          pdf.rect(xPos, yPos + 10, cardWidth, 5, 'F');
+          
+          // Nome do produto no cabeçalho
+          pdf.setTextColor(255, 255, 255);
+          pdf.setFontSize(9);
+          const truncatedName = truncateText(product.nome, 30);
+          pdf.text(truncatedName, xPos + 5, yPos + 10);
+          
+          // Área de conteúdo
+          let contentY = yPos + 22;
+          
+          // Coluna da esquerda - informações
+          pdf.setTextColor(...colors.dark);
+          pdf.setFontSize(8);
+          
+          if (product.marca) {
+            pdf.setTextColor(...colors.secondary);
+            pdf.text(`🏷️ ${product.marca}`, xPos + 5, contentY);
+            contentY += 8;
+          }
+          
+          pdf.setTextColor(...colors.dark);
+          pdf.text(`⚖️ ${product.peso}`, xPos + 5, contentY);
+          contentY += 8;
+          
+          // Preços com cores diferenciadas
+          pdf.setTextColor(...colors.success);
+          pdf.text(`💰 ${formatCurrency(product.precoUnitario)}`, xPos + 5, contentY);
+          contentY += 8;
+          
+          pdf.setTextColor(...colors.accent);
+          pdf.text(`📦 ${formatCurrency(product.precoFardo)}`, xPos + 5, contentY);
+          contentY += 8;
+          
+          pdf.setTextColor(...colors.secondary);
+          pdf.text(`🔢 ${product.qtdFardo} unidades`, xPos + 5, contentY);
+          
+          // Área da imagem (lado direito)
+          const imgAreaX = xPos + cardWidth - 35;
+          const imgAreaY = yPos + 20;
+          const imgSize = 30;
+          
+          // Fundo sutil para imagem
+          pdf.setFillColor(...colors.background);
+          pdf.roundedRect(imgAreaX, imgAreaY, imgSize, imgSize, 2, 2, 'F');
+          
+          // Tentar adicionar imagem do produto
+          if (product.imagePath && product.imagePath !== '/placeholder.svg') {
+            try {
+              const imgElement = document.createElement('img');
+              imgElement.src = product.imagePath;
+              imgElement.crossOrigin = 'anonymous';
               
               await new Promise((resolve) => {
-                imgPlaceholder.onload = resolve;
-                // Fallback if image fails to load
-                setTimeout(resolve, 1000);
+                imgElement.onload = resolve;
+                setTimeout(resolve, 500);
               });
               
-              try {
-                const imgCanvas = await html2canvas(imgPlaceholder, {
-                  allowTaint: true,
-                  useCORS: true
-                });
-                const imgData = imgCanvas.toDataURL('image/png');
-                
-                // Add image to the right side of the product cell
-                pdf.addImage(
-                  imgData, 
-                  'PNG', 
-                  xPos + (pageWidth / 2 - 20) - 35, // Right aligned
-                  yPos + 10,
-                  30, 
-                  30
-                );
-              } catch (e) {
-                console.error(`Error adding image for product ${product.nome}:`, e);
-              }
+              const imgCanvas = await html2canvas(imgElement, {
+                allowTaint: true,
+                useCORS: true,
+                width: 100,
+                height: 100
+              });
+              const imgData = imgCanvas.toDataURL('image/png');
+              
+              pdf.addImage(
+                imgData, 
+                'PNG', 
+                imgAreaX + 2, 
+                imgAreaY + 2,
+                imgSize - 4, 
+                imgSize - 4
+              );
+            } catch (e) {
+              console.error(`Error adding image for product ${product.nome}:`, e);
+              // Placeholder icon
+              pdf.setTextColor(...colors.secondary);
+              pdf.setFontSize(16);
+              pdf.text('📷', imgAreaX + imgSize/2, imgAreaY + imgSize/2 + 3, { align: 'center' });
             }
+          } else {
+            // Placeholder icon
+            pdf.setTextColor(...colors.secondary);
+            pdf.setFontSize(16);
+            pdf.text('📷', imgAreaX + imgSize/2, imgAreaY + imgSize/2 + 3, { align: 'center' });
           }
         }
       }
       
-      // Add footer to all pages
+      // Adicionar rodapés a todas as páginas
       const totalPages = currentPage;
       for (let i = 1; i <= totalPages; i++) {
         pdf.setPage(i);
-        pdf.setFontSize(8);
-        pdf.setTextColor(100, 100, 100);
-        pdf.text(`${i} de ${totalPages}`, pageWidth - 15, pageHeight - 10);
-        pdf.text(`Gerado em ${today.toLocaleDateString('pt-BR')}`, 15, pageHeight - 10);
+        if (i > 1) { // Não adicionar rodapé na capa
+          addModernFooter(i - 1, totalPages - 1);
+        }
       }
       
-      // Save the PDF with appropriate filename
+      // Salvar com nome premium
       const filename = isFiltered 
-        ? `catalogo-produtos-filtrado-${productCount}.pdf` 
-        : 'catalogo-produtos.pdf';
+        ? `catalogo-produtos-premium-filtrado-${productCount}.pdf` 
+        : 'catalogo-produtos-premium.pdf';
       
       pdf.save(filename);
-      toast.success(`Catálogo PDF gerado com sucesso! (${productCount} produto${productCount !== 1 ? 's' : ''})`);
+      toast.success(`Catálogo premium gerado com sucesso! (${productCount} produto${productCount !== 1 ? 's' : ''})`);
     } catch (error) {
       console.error('Error generating PDF:', error);
       toast.error('Erro ao gerar PDF. Tente novamente.');
@@ -228,10 +348,13 @@ export const PDFGenerator: React.FC<PDFGeneratorProps> = ({
     }
   };
   
-  // Abre o preview do PDF
   const openPreview = () => {
     setPreviewOpen(true);
   };
+  
+  // Limitar preview para os primeiros 8 produtos
+  const previewProducts = productsToExport.slice(0, 8);
+  const remainingCount = Math.max(0, productsToExport.length - 8);
   
   return (
     <>
@@ -244,62 +367,109 @@ export const PDFGenerator: React.FC<PDFGeneratorProps> = ({
         </DialogTrigger>
         <DialogContent className="sm:max-w-[900px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Prévia do Catálogo</DialogTitle>
+            <DialogTitle>📚 Prévia do Catálogo Premium</DialogTitle>
             <DialogDescription>
-              Prévia aproximada de como o catálogo aparecerá no PDF
+              Prévia aproximada de como o catálogo aparecerá no PDF premium
             </DialogDescription>
           </DialogHeader>
           
-          <div className="border rounded-md p-4 mt-4 bg-card">
-            {/* Capa do catálogo */}
+          <div className="border rounded-md p-4 mt-4 bg-gradient-to-br from-blue-50 to-slate-50">
+            {/* Capa moderna */}
             <div 
-              className="w-full rounded-md p-8 mb-8 text-center"
-              style={{backgroundColor: catalogConfig.corFundoPdf}}
+              className="w-full rounded-md p-8 mb-8 text-center relative overflow-hidden"
+              style={{
+                background: 'linear-gradient(135deg, #2563eb 0%, #f8fafc 100%)',
+                minHeight: '200px'
+              }}
             >
+              {/* Elementos decorativos */}
+              <div className="absolute top-4 right-8 w-16 h-16 bg-white/10 rounded-full"></div>
+              <div className="absolute bottom-8 left-4 w-10 h-10 bg-white/10 rounded-full"></div>
+              <div className="absolute top-1/2 right-4 w-6 h-6 bg-white/10 rounded-full"></div>
+              
               {catalogConfig.logoPath && (
                 <div className="flex justify-center mb-6">
                   <img 
                     src={catalogConfig.logoPath} 
                     alt="Logo" 
-                    className="max-h-24 object-contain"
+                    className="max-h-16 object-contain drop-shadow-lg"
                   />
                 </div>
               )}
-              <h2 className="text-2xl font-bold mb-4">CATÁLOGO DE PRODUTOS</h2>
-              <p>{new Date().toLocaleDateString('pt-BR')}</p>
+              
+              <div className="relative z-10">
+                <h1 className="text-3xl font-bold text-white mb-2">CATÁLOGO</h1>
+                <h2 className="text-xl font-semibold text-white/90 mb-4">DE PRODUTOS</h2>
+                
+                {/* Linha decorativa */}
+                <div className="w-20 h-0.5 bg-amber-400 mx-auto mb-6"></div>
+                
+                {/* Box informativo */}
+                <div className="bg-white/95 backdrop-blur-sm rounded-lg p-4 mx-auto max-w-xs border border-amber-200">
+                  <p className="text-sm text-slate-700 mb-2">
+                    📦 {productsToExport.length} produto{productsToExport.length !== 1 ? 's' : ''} 
+                    {previewProducts.length < productsToExport.length ? ' (mostrando 8)' : ''}
+                  </p>
+                  <p className="text-xs text-slate-600">
+                    📅 {new Date().toLocaleDateString('pt-BR')}
+                  </p>
+                </div>
+              </div>
             </div>
             
-            {/* Produtos */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              {productsToExport.map(product => (
-                <div key={product.id} className="border rounded-md p-4 shadow-sm">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium">{product.nome}</h3>
-                      <div className="text-sm text-muted-foreground mt-2 space-y-1">
-                        <p>Peso: {product.peso}</p>
-                        <p>Preço unitário: {formatCurrency(product.precoUnitario)}</p>
-                        <p>Preço fardo: {formatCurrency(product.precoFardo)}</p>
-                        <p>Qtd. por fardo: {product.qtdFardo}</p>
-                      </div>
+            {/* Produtos em grid 2x2 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+              {previewProducts.map(product => (
+                <div key={product.id} className="bg-white rounded-lg shadow-sm border overflow-hidden">
+                  {/* Cabeçalho colorido */}
+                  <div className="bg-blue-600 text-white p-2">
+                    <h3 className="text-sm font-medium truncate">{product.nome}</h3>
+                  </div>
+                  
+                  <div className="p-3 flex justify-between items-start">
+                    <div className="flex-1 space-y-1">
+                      {product.marca && (
+                        <p className="text-xs text-slate-600">🏷️ {product.marca}</p>
+                      )}
+                      <p className="text-xs text-slate-700">⚖️ {product.peso}</p>
+                      <p className="text-xs text-green-600 font-medium">💰 {formatCurrency(product.precoUnitario)}</p>
+                      <p className="text-xs text-amber-600 font-medium">📦 {formatCurrency(product.precoFardo)}</p>
+                      <p className="text-xs text-slate-500">🔢 {product.qtdFardo} unidades</p>
                     </div>
-                    <div className="ml-4">
-                      <img 
-                        src={product.imagePath} 
-                        alt={product.nome} 
-                        className="w-20 h-20 object-contain"
-                      />
+                    
+                    <div className="ml-3 w-12 h-12 bg-slate-50 rounded border flex items-center justify-center flex-shrink-0">
+                      {product.imagePath && product.imagePath !== '/placeholder.svg' ? (
+                        <img 
+                          src={product.imagePath} 
+                          alt={product.nome} 
+                          className="w-full h-full object-contain rounded"
+                        />
+                      ) : (
+                        <span className="text-slate-400 text-lg">📷</span>
+                      )}
                     </div>
                   </div>
                 </div>
               ))}
             </div>
+            
+            {remainingCount > 0 && (
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg text-center border border-blue-200">
+                <p className="text-sm text-blue-700">
+                  + {remainingCount} produto{remainingCount !== 1 ? 's' : ''} adiciona{remainingCount === 1 ? 'l' : 'is'} no PDF completo
+                </p>
+              </div>
+            )}
           </div>
           
           <div className="flex justify-end mt-4">
-            <Button onClick={generatePDF} disabled={isGenerating} className="gap-2">
+            <Button 
+              onClick={generatePDF} 
+              disabled={isGenerating} 
+              className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+            >
               <Download size={16} />
-              {isGenerating ? 'Gerando...' : 'Baixar PDF'}
+              {isGenerating ? 'Gerando...' : 'Baixar PDF Premium'}
             </Button>
           </div>
         </DialogContent>
@@ -308,10 +478,10 @@ export const PDFGenerator: React.FC<PDFGeneratorProps> = ({
       <Button 
         onClick={generatePDF} 
         disabled={isGenerating} 
-        className="gap-2"
+        className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
       >
         <FileDown size={16} />
-        {isGenerating ? 'Gerando...' : 'Gerar Catálogo PDF'}
+        {isGenerating ? 'Gerando...' : 'Gerar Catálogo Premium'}
       </Button>
       
       {/* Hidden content for PDF generation */}
