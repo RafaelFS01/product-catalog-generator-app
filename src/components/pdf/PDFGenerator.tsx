@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useProducts } from '@/contexts/ProductContext';
@@ -61,163 +60,160 @@ export const PDFGenerator: React.FC<PDFGeneratorProps> = ({
     }
     
     setIsGenerating(true);
-    const productCount = productsToExport.length;
     const isFiltered = customProducts && customProducts.length !== allProducts.length;
     
-    toast.info(`Gerando catálogo premium com ${productCount} produto${productCount !== 1 ? 's' : ''}${isFiltered ? ' (filtrado)' : ''}, por favor aguarde...`);
+    toast.info('Gerando catálogo PDF, por favor aguarde...');
     
     try {
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       
-      // Cores do sistema
-      const colors = {
-        primary: [37, 99, 235], // #2563eb
-        secondary: [100, 116, 139], // #64748b
-        accent: [245, 158, 11], // #f59e0b
-        success: [16, 185, 129], // #10b981
-        background: [248, 250, 252], // #f8fafc
-        white: [255, 255, 255],
-        dark: [30, 41, 59] // #1e293b
-      };
+      // === CAPA MODERNA COM CONFIGURAÇÕES ===
+      const primaryRgb = hexToRgb(colors.primary);
+      const secondaryRgb = hexToRgb(colors.secondary);
       
-      // === CAPA ELEGANTE ===
-      // Gradiente de fundo
-      const gradientSteps = 50;
-      for (let i = 0; i < gradientSteps; i++) {
-        const ratio = i / gradientSteps;
-        const r = colors.primary[0] + (colors.background[0] - colors.primary[0]) * ratio;
-        const g = colors.primary[1] + (colors.background[1] - colors.primary[1]) * ratio;
-        const b = colors.primary[2] + (colors.background[2] - colors.primary[2]) * ratio;
+      // Criar gradiente manual usando a cor configurada
+      pdf.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+      pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+      
+      // Adicionar camadas para simular gradiente
+      for (let i = 0; i < 20; i++) {
+        const ratio = i / 20;
+        const r = Math.round(primaryRgb.r + (secondaryRgb.r - primaryRgb.r) * ratio);
+        const g = Math.round(primaryRgb.g + (secondaryRgb.g - primaryRgb.g) * ratio);
+        const b = Math.round(primaryRgb.b + (secondaryRgb.b - primaryRgb.b) * ratio);
         
         pdf.setFillColor(r, g, b);
-        pdf.rect(0, i * (pageHeight / gradientSteps), pageWidth, pageHeight / gradientSteps + 1, 'F');
+        pdf.rect(0, i * (pageHeight / 20), pageWidth, pageHeight / 20, 'F');
       }
       
-      // Elementos decorativos - círculos geométricos
-      pdf.setFillColor(255, 255, 255, 0.1);
-      pdf.circle(pageWidth * 0.8, pageHeight * 0.2, 30, 'F');
-      pdf.circle(pageWidth * 0.2, pageHeight * 0.7, 20, 'F');
-      pdf.circle(pageWidth * 0.9, pageHeight * 0.8, 15, 'F');
+      // Elementos decorativos geométricos
+      pdf.setFillColor(255, 255, 255);
+      pdf.circle(pageWidth * 0.8, pageHeight * 0.2, 25, 'F');
+      pdf.setFillColor(255, 255, 255);
+      pdf.circle(pageWidth * 0.2, pageHeight * 0.7, 15, 'F');
       
-      // Logo se existir
+      // Área principal da capa com fundo branco
+      pdf.setFillColor(255, 255, 255);
+      pdf.roundedRect(25, 50, pageWidth - 50, pageHeight - 100, 8, 8, 'F');
+      
+      // Logo centralizado
       if (catalogConfig.logoPath && catalogConfig.logoPath !== '/placeholder.svg') {
         try {
-          const logoImg = document.createElement('img');
-          logoImg.src = catalogConfig.logoPath;
+          const logoImg = new Image();
           logoImg.crossOrigin = 'anonymous';
           
-          await new Promise((resolve) => {
-            logoImg.onload = resolve;
-            setTimeout(resolve, 1000);
+          await new Promise<void>((resolve, reject) => {
+            logoImg.onload = () => resolve();
+            logoImg.onerror = () => reject(new Error('Failed to load logo'));
+            logoImg.src = catalogConfig.logoPath;
+            setTimeout(() => reject(new Error('Logo load timeout')), 3000);
           });
           
-          const logoCanvas = await html2canvas(logoImg, { 
-            allowTaint: true,
-            useCORS: true
-          });
-          const logoImgData = logoCanvas.toDataURL('image/png');
-          
-          const logoWidth = 50;
-          const logoHeight = (logoCanvas.height * logoWidth) / logoCanvas.width;
-          
-          pdf.addImage(
-            logoImgData, 
-            'PNG', 
-            (pageWidth - logoWidth) / 2, 
-            30, 
-            logoWidth, 
-            logoHeight
-          );
+          const logoCanvas = document.createElement('canvas');
+          const logoCtx = logoCanvas.getContext('2d');
+          if (logoCtx) {
+            logoCanvas.width = 200;
+            logoCanvas.height = 150;
+            
+            logoCtx.fillStyle = '#ffffff';
+            logoCtx.fillRect(0, 0, logoCanvas.width, logoCanvas.height);
+            
+            const logoScale = Math.min(logoCanvas.width / logoImg.width, logoCanvas.height / logoImg.height);
+            const logoScaledWidth = logoImg.width * logoScale;
+            const logoScaledHeight = logoImg.height * logoScale;
+            const logoOffsetX = (logoCanvas.width - logoScaledWidth) / 2;
+            const logoOffsetY = (logoCanvas.height - logoScaledHeight) / 2;
+            
+            logoCtx.drawImage(logoImg, logoOffsetX, logoOffsetY, logoScaledWidth, logoScaledHeight);
+            
+            const logoData = logoCanvas.toDataURL('image/png', 0.8);
+            const logoWidth = 40;
+            const logoHeight = 30;
+            
+            pdf.addImage(logoData, 'PNG', (pageWidth - logoWidth) / 2, 80, logoWidth, logoHeight);
+          }
         } catch (e) {
           console.error('Error adding logo to PDF:', e);
         }
       }
       
-      // Título hierárquico
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFontSize(32);
-      pdf.text('CATÁLOGO', pageWidth / 2, 100, { align: 'center' });
+      // Título principal
+      pdf.setTextColor(hexToRgb(colors.dark).r, hexToRgb(colors.dark).g, hexToRgb(colors.dark).b);
+      pdf.setFontSize(28);
+      pdf.setFont(undefined, 'bold');
+      pdf.text('CATALOGO', pageWidth / 2, 140, { align: 'center' });
+      
       pdf.setFontSize(24);
-      pdf.text('DE PRODUTOS', pageWidth / 2, 115, { align: 'center' });
+      pdf.setFont(undefined, 'normal');
+      pdf.text('DE PRODUTOS', pageWidth / 2, 155, { align: 'center' });
       
-      // Linha decorativa dourada
-      pdf.setDrawColor(...colors.accent);
+      // Linha decorativa
+      pdf.setDrawColor(hexToRgb(colors.accent).r, hexToRgb(colors.accent).g, hexToRgb(colors.accent).b);
       pdf.setLineWidth(2);
-      pdf.line(pageWidth / 2 - 40, 125, pageWidth / 2 + 40, 125);
+      pdf.line(pageWidth / 2 - 25, 165, pageWidth / 2 + 25, 165);
       
-      // Box informativo
-      pdf.setFillColor(255, 255, 255, 0.95);
-      pdf.roundedRect(pageWidth / 2 - 60, 140, 120, 50, 5, 5, 'F');
+      // Box informativo SEM CONTADOR
+      pdf.setFillColor(hexToRgb(colors.background).r, hexToRgb(colors.background).g, hexToRgb(colors.background).b);
+      pdf.roundedRect(45, 180, pageWidth - 90, 40, 4, 4, 'F');
       
-      // Borda do box
-      pdf.setDrawColor(...colors.accent);
-      pdf.setLineWidth(1);
-      pdf.roundedRect(pageWidth / 2 - 60, 140, 120, 50, 5, 5, 'S');
-      
-      // Informações no box
-      pdf.setTextColor(...colors.dark);
+      pdf.setTextColor(hexToRgb(colors.text).r, hexToRgb(colors.text).g, hexToRgb(colors.text).b);
       pdf.setFontSize(14);
-      const subtitle = isFiltered 
-        ? `📦 ${productCount} produto${productCount !== 1 ? 's' : ''} selecionado${productCount !== 1 ? 's' : ''}`
-        : `📦 ${productCount} produto${productCount !== 1 ? 's' : ''} cadastrado${productCount !== 1 ? 's' : ''}`;
-      pdf.text(subtitle, pageWidth / 2, 155, { align: 'center' });
+      pdf.setFont(undefined, 'bold');
+      pdf.text('CATÁLOGO PREMIUM', pageWidth / 2, 195, { align: 'center' });
       
+      // Data
+      pdf.setFontSize(11);
+      pdf.setFont(undefined, 'normal');
+      pdf.setTextColor(hexToRgb(colors.muted).r, hexToRgb(colors.muted).g, hexToRgb(colors.muted).b);
       const today = new Date();
-      pdf.setFontSize(12);
-      pdf.text(`📅 ${today.toLocaleDateString('pt-BR')}`, pageWidth / 2, 170, { align: 'center' });
+      pdf.text(`Gerado em ${today.toLocaleDateString('pt-BR')}`, pageWidth / 2, 210, { align: 'center' });
       
-      // Função para adicionar cabeçalho moderno
+      // Função para cabeçalho SEM CONTADOR
       const addModernHeader = (pageNum: number) => {
-        // Faixa azul
-        pdf.setFillColor(...colors.primary);
+        pdf.setFillColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
         pdf.rect(0, 0, pageWidth, 20, 'F');
         
-        // Linha dourada
-        pdf.setFillColor(...colors.accent);
-        pdf.rect(0, 20, pageWidth, 2, 'F');
+        pdf.setFillColor(hexToRgb(colors.accent).r, hexToRgb(colors.accent).g, hexToRgb(colors.accent).b);
+        pdf.rect(0, 18, pageWidth, 2, 'F');
         
-        // Ícone e título
         pdf.setTextColor(255, 255, 255);
-        pdf.setFontSize(10);
-        pdf.text('📚 Catálogo de Produtos', 15, 15);
+        pdf.setFontSize(11);
+        pdf.setFont(undefined, 'bold');
+        pdf.text('CATALOGO DE PRODUTOS', 15, 13);
         
-        // Número da página em círculo
-        pdf.setFillColor(...colors.accent);
-        pdf.circle(pageWidth - 20, 11, 8, 'F');
-        
-        pdf.setTextColor(...colors.dark);
-        pdf.setFontSize(10);
-        pdf.text(`${pageNum}`, pageWidth - 20, 14, { align: 'center' });
-        
-        if (isFiltered) {
-          pdf.setTextColor(255, 255, 255);
-          pdf.setFontSize(8);
-          pdf.text(`(${productCount} filtrados)`, pageWidth - 55, 15, { align: 'right' });
-        }
+        pdf.setFillColor(255, 255, 255);
+        pdf.circle(pageWidth - 20, 10, 6, 'F');
+        pdf.setTextColor(primaryRgb.r, primaryRgb.g, primaryRgb.b);
+        pdf.setFontSize(9);
+        pdf.setFont(undefined, 'bold');
+        pdf.text(`${pageNum}`, pageWidth - 20, 12, { align: 'center' });
       };
       
-      // Função para adicionar rodapé elegante
-      const addModernFooter = (currentPage: number, totalPages: number) => {
-        // Linha decorativa
-        pdf.setFillColor(...colors.accent);
-        pdf.rect(15, pageHeight - 15, pageWidth - 30, 1, 'F');
+      // Função para rodapé
+      const addModernFooter = (pageNum: number, totalPages: number) => {
+        const footerY = pageHeight - 10;
         
+        pdf.setDrawColor(hexToRgb(colors.lightGray).r, hexToRgb(colors.lightGray).g, hexToRgb(colors.lightGray).b);
+        pdf.setLineWidth(0.5);
+        pdf.line(15, footerY - 5, pageWidth - 15, footerY - 5);
+        
+        pdf.setTextColor(hexToRgb(colors.muted).r, hexToRgb(colors.muted).g, hexToRgb(colors.muted).b);
         pdf.setFontSize(8);
-        pdf.setTextColor(...colors.secondary);
-        pdf.text(`📅 Gerado em ${today.toLocaleDateString('pt-BR')}`, 15, pageHeight - 8);
-        pdf.text(`${currentPage} de ${totalPages}`, pageWidth - 15, pageHeight - 8, { align: 'right' });
+        pdf.setFont(undefined, 'normal');
+        pdf.text(`${today.toLocaleDateString('pt-BR')}`, 15, footerY);
+        pdf.text(`Pagina ${pageNum} de ${totalPages}`, pageWidth - 15, footerY, { align: 'right' });
       };
       
-      // Iniciar páginas de produtos
+      // Páginas de produtos
       pdf.addPage();
       let currentPage = 2;
       addModernHeader(currentPage - 1);
       
-      // Layout 2x2 (4 produtos por página)
       const productsPerPage = 4;
-      let productIndex = 0;
+      const cardWidth = (pageWidth - 30) / 2 - 5;
+      const cardHeight = 100;
       
       for (let i = 0; i < productsToExport.length; i += productsPerPage) {
         if (i > 0) {
@@ -226,140 +222,144 @@ export const PDFGenerator: React.FC<PDFGeneratorProps> = ({
           addModernHeader(currentPage - 1);
         }
         
-        // Processar até 4 produtos por página
-        for (let j = 0; j < productsPerPage && (i + j) < productsToExport.length; j++) {
+        for (let j = 0; j < productsPerPage && i + j < productsToExport.length; j++) {
           const product = productsToExport[i + j];
-          
-          // Posições para layout 2x2
           const col = j % 2;
           const row = Math.floor(j / 2);
-          const cardWidth = (pageWidth - 40) / 2;
-          const cardHeight = 85;
           const xPos = 15 + col * (cardWidth + 10);
-          const yPos = 35 + row * (cardHeight + 15);
+          const yPos = 30 + row * (cardHeight + 8);
           
           // Card com sombra
-          pdf.setFillColor(200, 200, 200, 0.3);
-          pdf.roundedRect(xPos + 2, yPos + 2, cardWidth, cardHeight, 3, 3, 'F');
+          pdf.setFillColor(200, 200, 200);
+          pdf.roundedRect(xPos + 1, yPos + 1, cardWidth, cardHeight, 4, 4, 'F');
           
           // Card principal
-          pdf.setFillColor(...colors.white);
-          pdf.roundedRect(xPos, yPos, cardWidth, cardHeight, 3, 3, 'F');
+          pdf.setFillColor(255, 255, 255);
+          pdf.roundedRect(xPos, yPos, cardWidth, cardHeight, 4, 4, 'F');
           
-          // Borda sutil
-          pdf.setDrawColor(...colors.background);
+          // Borda
+          pdf.setDrawColor(hexToRgb(colors.lightGray).r, hexToRgb(colors.lightGray).g, hexToRgb(colors.lightGray).b);
           pdf.setLineWidth(0.5);
-          pdf.roundedRect(xPos, yPos, cardWidth, cardHeight, 3, 3, 'S');
+          pdf.roundedRect(xPos, yPos, cardWidth, cardHeight, 4, 4, 'S');
           
-          // Cabeçalho colorido do card
-          pdf.setFillColor(...colors.primary);
-          pdf.roundedRect(xPos, yPos, cardWidth, 15, 3, 3, 'F');
-          pdf.rect(xPos, yPos + 10, cardWidth, 5, 'F');
+          // Cabeçalho do produto
+          pdf.setFillColor(hexToRgb(colors.background).r, hexToRgb(colors.background).g, hexToRgb(colors.background).b);
+          pdf.roundedRect(xPos, yPos, cardWidth, 18, 4, 4, 'F');
+          pdf.rect(xPos, yPos + 14, cardWidth, 4, 'F');
           
-          // Nome do produto no cabeçalho
-          pdf.setTextColor(255, 255, 255);
-          pdf.setFontSize(9);
-          const truncatedName = truncateText(product.nome, 30);
-          pdf.text(truncatedName, xPos + 5, yPos + 10);
+          // Nome do produto
+          pdf.setTextColor(hexToRgb(colors.dark).r, hexToRgb(colors.dark).g, hexToRgb(colors.dark).b);
+          pdf.setFontSize(11);
+          pdf.setFont(undefined, 'bold');
+          pdf.text(truncateText(product.nome, 24), xPos + 8, yPos + 12);
           
-          // Área de conteúdo
-          let contentY = yPos + 22;
+          // Área da imagem
+          const imgAreaY = yPos + 22;
+          const imgSize = 35;
+          const imgX = xPos + (cardWidth - imgSize) / 2;
           
-          // Coluna da esquerda - informações
-          pdf.setTextColor(...colors.dark);
-          pdf.setFontSize(8);
-          
-          if (product.marca) {
-            pdf.setTextColor(...colors.secondary);
-            pdf.text(`🏷️ ${product.marca}`, xPos + 5, contentY);
-            contentY += 8;
-          }
-          
-          pdf.setTextColor(...colors.dark);
-          pdf.text(`⚖️ ${product.peso}`, xPos + 5, contentY);
-          contentY += 8;
-          
-          // Preços com cores diferenciadas
-          pdf.setTextColor(...colors.success);
-          pdf.text(`💰 ${formatCurrency(product.precoUnitario)}`, xPos + 5, contentY);
-          contentY += 8;
-          
-          pdf.setTextColor(...colors.accent);
-          pdf.text(`📦 ${formatCurrency(product.precoFardo)}`, xPos + 5, contentY);
-          contentY += 8;
-          
-          pdf.setTextColor(...colors.secondary);
-          pdf.text(`🔢 ${product.qtdFardo} unidades`, xPos + 5, contentY);
-          
-          // Área da imagem (lado direito)
-          const imgAreaX = xPos + cardWidth - 35;
-          const imgAreaY = yPos + 20;
-          const imgSize = 30;
-          
-          // Fundo sutil para imagem
-          pdf.setFillColor(...colors.background);
-          pdf.roundedRect(imgAreaX, imgAreaY, imgSize, imgSize, 2, 2, 'F');
-          
-          // Tentar adicionar imagem do produto
+          let imageLoaded = false;
           if (product.imagePath && product.imagePath !== '/placeholder.svg') {
             try {
-              const imgElement = document.createElement('img');
-              imgElement.src = product.imagePath;
-              imgElement.crossOrigin = 'anonymous';
+              const img = new Image();
+              img.crossOrigin = 'anonymous';
               
-              await new Promise((resolve) => {
-                imgElement.onload = resolve;
-                setTimeout(resolve, 500);
+              await new Promise<void>((resolve, reject) => {
+                img.onload = () => resolve();
+                img.onerror = () => reject(new Error('Failed to load image'));
+                img.src = product.imagePath;
+                setTimeout(() => reject(new Error('Image load timeout')), 2000);
               });
               
-              const imgCanvas = await html2canvas(imgElement, {
-                allowTaint: true,
-                useCORS: true,
-                width: 100,
-                height: 100
-              });
-              const imgData = imgCanvas.toDataURL('image/png');
-              
-              pdf.addImage(
-                imgData, 
-                'PNG', 
-                imgAreaX + 2, 
-                imgAreaY + 2,
-                imgSize - 4, 
-                imgSize - 4
-              );
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+              if (ctx) {
+                canvas.width = imgSize * 3;
+                canvas.height = imgSize * 3;
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+                const scaledWidth = img.width * scale;
+                const scaledHeight = img.height * scale;
+                const offsetX = (canvas.width - scaledWidth) / 2;
+                const offsetY = (canvas.height - scaledHeight) / 2;
+                
+                ctx.drawImage(img, offsetX, offsetY, scaledWidth, scaledHeight);
+                
+                const imgData = canvas.toDataURL('image/png', 0.8);
+                
+                pdf.setFillColor(hexToRgb(colors.background).r, hexToRgb(colors.background).g, hexToRgb(colors.background).b);
+                pdf.roundedRect(imgX - 2, imgAreaY - 2, imgSize + 4, imgSize + 4, 2, 2, 'F');
+                
+                pdf.addImage(imgData, 'PNG', imgX, imgAreaY, imgSize, imgSize);
+                imageLoaded = true;
+              }
             } catch (e) {
-              console.error(`Error adding image for product ${product.nome}:`, e);
-              // Placeholder icon
-              pdf.setTextColor(...colors.secondary);
-              pdf.setFontSize(16);
-              pdf.text('📷', imgAreaX + imgSize/2, imgAreaY + imgSize/2 + 3, { align: 'center' });
+              console.warn(`Imagem não carregada para ${product.nome}, usando placeholder`);
+              imageLoaded = false;
             }
-          } else {
-            // Placeholder icon
-            pdf.setTextColor(...colors.secondary);
-            pdf.setFontSize(16);
-            pdf.text('📷', imgAreaX + imgSize/2, imgAreaY + imgSize/2 + 3, { align: 'center' });
           }
+          
+          if (!imageLoaded) {
+            pdf.setFillColor(hexToRgb(colors.lightGray).r, hexToRgb(colors.lightGray).g, hexToRgb(colors.lightGray).b);
+            pdf.roundedRect(imgX, imgAreaY, imgSize, imgSize, 2, 2, 'F');
+            pdf.setTextColor(hexToRgb(colors.muted).r, hexToRgb(colors.muted).g, hexToRgb(colors.muted).b);
+            pdf.setFontSize(10);
+            pdf.text('IMG', imgX + imgSize/2, imgAreaY + imgSize/2 + 2, { align: 'center' });
+          }
+          
+          // Informações do produto
+          let detailY = imgAreaY + imgSize + 8;
+          
+          if (product.marca) {
+            pdf.setFontSize(9);
+            pdf.setTextColor(hexToRgb(colors.muted).r, hexToRgb(colors.muted).g, hexToRgb(colors.muted).b);
+            pdf.setFont(undefined, 'italic');
+            pdf.text(`Marca: ${truncateText(product.marca, 20)}`, xPos + 8, detailY, { align: 'left' });
+            detailY += 8;
+          }
+          
+          pdf.setFontSize(9);
+          pdf.setFont(undefined, 'normal');
+          pdf.setTextColor(hexToRgb(colors.text).r, hexToRgb(colors.text).g, hexToRgb(colors.text).b);
+          pdf.text(`Peso: ${product.peso}`, xPos + 8, detailY);
+          detailY += 8;
+          
+          // Preços
+          pdf.setFontSize(10);
+          pdf.setFont(undefined, 'bold');
+          pdf.setTextColor(hexToRgb(colors.success).r, hexToRgb(colors.success).g, hexToRgb(colors.success).b);
+          pdf.text(`Unit: ${formatCurrency(product.precoUnitario)}`, xPos + 8, detailY);
+          
+          pdf.setTextColor(hexToRgb(colors.accent).r, hexToRgb(colors.accent).g, hexToRgb(colors.accent).b);
+          pdf.text(`Fardo: ${formatCurrency(product.precoFardo)}`, xPos + cardWidth/2 + 4, detailY);
+          detailY += 8;
+          
+          pdf.setFontSize(9);
+          pdf.setFont(undefined, 'normal');
+          pdf.setTextColor(hexToRgb(colors.text).r, hexToRgb(colors.text).g, hexToRgb(colors.text).b);
+          pdf.text(`Qtd/Fardo: ${product.qtdFardo}`, xPos + 8, detailY);
         }
       }
       
-      // Adicionar rodapés a todas as páginas
+      // Adicionar rodapés
       const totalPages = currentPage;
       for (let i = 1; i <= totalPages; i++) {
         pdf.setPage(i);
-        if (i > 1) { // Não adicionar rodapé na capa
+        if (i > 1) {
           addModernFooter(i - 1, totalPages - 1);
         }
       }
       
-      // Salvar com nome premium
+      // Salvar SEM CONTADOR no nome
       const filename = isFiltered 
-        ? `catalogo-produtos-premium-filtrado-${productCount}.pdf` 
+        ? 'catalogo-produtos-premium-filtrado.pdf' 
         : 'catalogo-produtos-premium.pdf';
       
       pdf.save(filename);
-      toast.success(`Catálogo premium gerado com sucesso! (${productCount} produto${productCount !== 1 ? 's' : ''})`);
+      toast.success('Catálogo Premium gerado com sucesso!');
     } catch (error) {
       console.error('Error generating PDF:', error);
       toast.error('Erro ao gerar PDF. Tente novamente.');
@@ -372,10 +372,6 @@ export const PDFGenerator: React.FC<PDFGeneratorProps> = ({
     setPreviewOpen(true);
   };
   
-  // Limitar preview para os primeiros 8 produtos
-  const previewProducts = productsToExport.slice(0, 8);
-  const remainingCount = Math.max(0, productsToExport.length - 8);
-  
   return (
     <>
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
@@ -387,107 +383,102 @@ export const PDFGenerator: React.FC<PDFGeneratorProps> = ({
         </DialogTrigger>
         <DialogContent className="sm:max-w-[900px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>📚 Prévia do Catálogo Premium</DialogTitle>
+            <DialogTitle>Prévia do Catálogo Premium</DialogTitle>
             <DialogDescription>
-              Prévia aproximada de como o catálogo aparecerá no PDF premium
+              Prévia aproximada de como o catálogo premium aparecerá no PDF
             </DialogDescription>
           </DialogHeader>
           
-          <div className="border rounded-md p-4 mt-4 bg-gradient-to-br from-blue-50 to-slate-50">
-            {/* Capa moderna */}
+          <div className="border rounded-md p-4 mt-4 bg-card">
             <div 
-              className="w-full rounded-md p-8 mb-8 text-center relative overflow-hidden"
+              className="w-full rounded-lg p-8 mb-8 text-center relative overflow-hidden"
               style={{
-                background: 'linear-gradient(135deg, #2563eb 0%, #f8fafc 100%)',
-                minHeight: '200px'
+                background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`,
+                color: 'white'
               }}
             >
-              {/* Elementos decorativos */}
-              <div className="absolute top-4 right-8 w-16 h-16 bg-white/10 rounded-full"></div>
-              <div className="absolute bottom-8 left-4 w-10 h-10 bg-white/10 rounded-full"></div>
-              <div className="absolute top-1/2 right-4 w-6 h-6 bg-white/10 rounded-full"></div>
+              <div className="absolute top-4 right-4 w-16 h-16 rounded-full bg-white opacity-10"></div>
+              <div className="absolute bottom-4 left-4 w-10 h-10 rounded-full bg-white opacity-10"></div>
               
-              {catalogConfig.logoPath && (
-                <div className="flex justify-center mb-6">
-                  <img 
-                    src={catalogConfig.logoPath} 
-                    alt="Logo" 
-                    className="max-h-16 object-contain drop-shadow-lg"
-                  />
-                </div>
-              )}
-              
-              <div className="relative z-10">
-                <h1 className="text-3xl font-bold text-white mb-2">CATÁLOGO</h1>
-                <h2 className="text-xl font-semibold text-white/90 mb-4">DE PRODUTOS</h2>
-                
-                {/* Linha decorativa */}
-                <div className="w-20 h-0.5 bg-amber-400 mx-auto mb-6"></div>
-                
-                {/* Box informativo */}
-                <div className="bg-white/95 backdrop-blur-sm rounded-lg p-4 mx-auto max-w-xs border border-amber-200">
-                  <p className="text-sm text-slate-700 mb-2">
-                    📦 {productsToExport.length} produto{productsToExport.length !== 1 ? 's' : ''} 
-                    {previewProducts.length < productsToExport.length ? ' (mostrando 8)' : ''}
-                  </p>
-                  <p className="text-xs text-slate-600">
-                    📅 {new Date().toLocaleDateString('pt-BR')}
+              <div className="bg-white bg-opacity-95 rounded-lg p-6 text-gray-800 mx-4">
+                {catalogConfig.logoPath && catalogConfig.logoPath !== '/placeholder.svg' && (
+                  <div className="flex justify-center mb-6">
+                    <img 
+                      src={catalogConfig.logoPath} 
+                      alt="Logo" 
+                      className="max-h-20 object-contain"
+                    />
+                  </div>
+                )}
+                <h2 className="text-3xl font-bold mb-2">CATÁLOGO</h2>
+                <h3 className="text-2xl mb-4">DE PRODUTOS</h3>
+                <div className="h-0.5 bg-yellow-500 w-16 mx-auto mb-4"></div>
+                <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                  <p className="font-semibold text-lg">
+                    CATÁLOGO PREMIUM
                   </p>
                 </div>
+                <p className="text-sm text-gray-600">
+                  Gerado em {new Date().toLocaleDateString('pt-BR')}
+                </p>
               </div>
             </div>
             
-            {/* Produtos em grid 2x2 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-              {previewProducts.map(product => (
-                <div key={product.id} className="bg-white rounded-lg shadow-sm border overflow-hidden">
-                  {/* Cabeçalho colorido */}
-                  <div className="bg-blue-600 text-white p-2">
-                    <h3 className="text-sm font-medium truncate">{product.nome}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+              {productsToExport.slice(0, 8).map(product => (
+                <div key={product.id} className="border rounded-lg shadow-md overflow-hidden bg-white">
+                  <div className="bg-gray-50 px-4 py-3 border-b">
+                    <h3 className="font-bold text-gray-800 text-lg">{product.nome}</h3>
+                    {product.marca && (
+                      <p className="text-sm text-gray-600 italic">Marca: {product.marca}</p>
+                    )}
                   </div>
                   
-                  <div className="p-3 flex justify-between items-start">
-                    <div className="flex-1 space-y-1">
-                      {product.marca && (
-                        <p className="text-xs text-slate-600">🏷️ {product.marca}</p>
-                      )}
-                      <p className="text-xs text-slate-700">⚖️ {product.peso}</p>
-                      <p className="text-xs text-green-600 font-medium">💰 {formatCurrency(product.precoUnitario)}</p>
-                      <p className="text-xs text-amber-600 font-medium">📦 {formatCurrency(product.precoFardo)}</p>
-                      <p className="text-xs text-slate-500">🔢 {product.qtdFardo} unidades</p>
-                    </div>
-                    
-                    <div className="ml-3 w-12 h-12 bg-slate-50 rounded border flex items-center justify-center flex-shrink-0">
-                      {product.imagePath && product.imagePath !== '/placeholder.svg' ? (
+                  <div className="p-4">
+                    <div className="flex justify-center mb-4">
+                      <div className="w-24 h-24 bg-gray-50 rounded-lg p-2 flex items-center justify-center">
                         <img 
                           src={product.imagePath} 
                           alt={product.nome} 
-                          className="w-full h-full object-contain rounded"
+                          className="max-w-full max-h-full object-contain"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            (e.currentTarget.nextSibling as HTMLElement).style.display = 'flex';
+                          }}
                         />
-                      ) : (
-                        <span className="text-slate-400 text-lg">📷</span>
-                      )}
+                        <div className="w-full h-full bg-gray-200 rounded flex items-center justify-center text-lg hidden">
+                          IMG
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 text-sm text-center">
+                      <p className="text-gray-700 font-medium">Peso: {product.peso}</p>
+                      <div className="flex justify-between">
+                        <p className="text-green-600 font-bold">Unit: {formatCurrency(product.precoUnitario)}</p>
+                        <p className="text-yellow-600 font-bold">Fardo: {formatCurrency(product.precoFardo)}</p>
+                      </div>
+                      <p className="text-gray-600">Qtd/Fardo: {product.qtdFardo}</p>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
             
-            {remainingCount > 0 && (
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg text-center border border-blue-200">
-                <p className="text-sm text-blue-700">
-                  + {remainingCount} produto{remainingCount !== 1 ? 's' : ''} adiciona{remainingCount === 1 ? 'l' : 'is'} no PDF completo
+            {productsToExport.length > 8 && (
+              <div className="text-center mt-6 p-4 bg-blue-50 rounded-lg">
+                <p className="text-blue-700">
+                  ... e mais produtos no PDF completo
                 </p>
               </div>
             )}
           </div>
           
-          <div className="flex justify-end mt-4">
-            <Button 
-              onClick={generatePDF} 
-              disabled={isGenerating} 
-              className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
-            >
+          <div className="flex justify-end mt-4 gap-2">
+            <Button variant="outline" onClick={() => setPreviewOpen(false)}>
+              Fechar
+            </Button>
+            <Button onClick={generatePDF} disabled={isGenerating} className="gap-2">
               <Download size={16} />
               {isGenerating ? 'Gerando...' : 'Baixar PDF Premium'}
             </Button>
@@ -498,13 +489,16 @@ export const PDFGenerator: React.FC<PDFGeneratorProps> = ({
       <Button 
         onClick={generatePDF} 
         disabled={isGenerating} 
-        className="gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+        className="gap-2"
+        style={{
+          background: `linear-gradient(to right, ${colors.primary}, ${colors.secondary})`,
+          border: 'none'
+        }}
       >
         <FileDown size={16} />
         {isGenerating ? 'Gerando...' : 'Gerar Catálogo Premium'}
       </Button>
       
-      {/* Hidden content for PDF generation */}
       <div className="hidden">
         <div id="pdf-content-wrapper" ref={pdfContentRef}></div>
       </div>
@@ -530,3 +524,4 @@ const truncateText = (text: string, maxLength: number): string => {
 };
 
 export default PDFGenerator;
+
