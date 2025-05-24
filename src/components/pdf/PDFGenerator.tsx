@@ -286,11 +286,11 @@ export const PDFGenerator: React.FC<PDFGeneratorProps> = ({
           const imgSize = 35;
           const imgX = xPos + (cardWidth - imgSize) / 2; // Centralizar horizontalmente
           
-          // Tentar carregar e exibir a imagem (SEM CORS)
+          // Tentar carregar e exibir a imagem (COM CORS)
           let imageLoaded = false;
           if (product.imagePath && product.imagePath !== '/placeholder.svg') {
             try {
-              // Método mais direto para carregar imagem (SEM CORS)
+              // Método mais direto para carregar imagem (COM CORS)
               const img = new Image();
               img.crossOrigin = 'anonymous';
               
