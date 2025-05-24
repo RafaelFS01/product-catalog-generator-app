@@ -1,7 +1,7 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ref, get, set, update, remove, push, query, orderByChild } from 'firebase/database';
-import { db } from '@/lib/firebase';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '@/lib/firebase';
 import { Product, CatalogConfig } from '@/types';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -196,10 +196,40 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const uploadImage = async (file: File): Promise<string> => {
     try {
-      // Note: In a real implementation with a backend, we would upload the file to a server
-      // For now, we'll just return a placeholder
-      // This function would be replaced by actual backend file upload functionality
-      return '/placeholder.svg';
+      // Validações
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+
+      if (file.size > maxSize) {
+        throw new Error('Arquivo muito grande. Tamanho máximo: 5MB');
+      }
+
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error('Tipo de arquivo não suportado. Use: JPG, PNG, GIF ou WebP');
+      }
+
+      // Criar nome único para o arquivo
+      const timestamp = Date.now();
+      const randomString = Math.random().toString(36).substring(2, 15);
+      const fileExtension = file.name.split('.').pop();
+      const fileName = `${timestamp}_${randomString}.${fileExtension}`;
+      
+      // Definir o caminho no Storage
+      const imagePath = `produtos/${fileName}`;
+      const imageRef = storageRef(storage, imagePath);
+
+      // Fazer upload do arquivo
+      const snapshot = await uploadBytes(imageRef, file);
+      
+      // Obter URL de download
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      toast({
+        title: "Upload concluído",
+        description: "Imagem enviada com sucesso!",
+      });
+
+      return downloadURL;
     } catch (error) {
       toast({
         title: "Erro ao fazer upload da imagem",

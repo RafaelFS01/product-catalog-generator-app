@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useProducts } from '@/contexts/ProductContext';
@@ -7,6 +6,7 @@ import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { formatCurrency } from '@/lib/utils';
+import { Product } from '@/types';
 import { 
   Dialog,
   DialogContent,
@@ -16,20 +16,34 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-export const PDFGenerator: React.FC = () => {
-  const { products, catalogConfig } = useProducts();
+interface PDFGeneratorProps {
+  products?: Product[];
+  label?: string;
+}
+
+export const PDFGenerator: React.FC<PDFGeneratorProps> = ({ 
+  products: customProducts, 
+  label = "Gerar Catálogo PDF" 
+}) => {
+  const { products: allProducts, catalogConfig } = useProducts();
   const pdfContentRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   
+  // Use produtos customizados se fornecidos, senão use todos os produtos
+  const productsToExport = customProducts || allProducts;
+  
   const generatePDF = async () => {
-    if (!products.length) {
+    if (!productsToExport.length) {
       toast.error('Não há produtos para gerar o catálogo');
       return;
     }
     
     setIsGenerating(true);
-    toast.info('Gerando PDF, por favor aguarde...');
+    const productCount = productsToExport.length;
+    const isFiltered = customProducts && customProducts.length !== allProducts.length;
+    
+    toast.info(`Gerando PDF com ${productCount} produto${productCount !== 1 ? 's' : ''}${isFiltered ? ' (filtrado)' : ''}, por favor aguarde...`);
     
     try {
       const pdf = new jsPDF('p', 'mm', 'a4');
@@ -80,10 +94,17 @@ export const PDFGenerator: React.FC = () => {
       pdf.setFontSize(24);
       pdf.text('CATÁLOGO DE PRODUTOS', pageWidth / 2, 100, { align: 'center' });
       
+      // Add product count and filter info
+      pdf.setFontSize(14);
+      const subtitle = isFiltered 
+        ? `${productCount} produto${productCount !== 1 ? 's' : ''} selecionado${productCount !== 1 ? 's' : ''}`
+        : `${productCount} produto${productCount !== 1 ? 's' : ''} cadastrado${productCount !== 1 ? 's' : ''}`;
+      pdf.text(subtitle, pageWidth / 2, 110, { align: 'center' });
+      
       // Add date to cover
       const today = new Date();
       pdf.setFontSize(12);
-      pdf.text(`Gerado em ${today.toLocaleDateString('pt-BR')}`, pageWidth / 2, 120, { align: 'center' });
+      pdf.text(`Gerado em ${today.toLocaleDateString('pt-BR')}`, pageWidth / 2, 125, { align: 'center' });
       
       // Function to add page header
       const addHeader = (pageNum: number) => {
@@ -92,6 +113,9 @@ export const PDFGenerator: React.FC = () => {
         pdf.setTextColor(0, 0, 0);
         pdf.setFontSize(10);
         pdf.text(`Catálogo de Produtos - Página ${pageNum}`, 10, 15);
+        if (isFiltered) {
+          pdf.text(`(${productCount} produtos filtrados)`, pageWidth - 10, 15, { align: 'right' });
+        }
       };
       
       // Start adding products on new page
@@ -100,7 +124,7 @@ export const PDFGenerator: React.FC = () => {
       addHeader(currentPage - 1);
       
       // Process products in rows of 2
-      for (let i = 0; i < products.length; i += 2) {
+      for (let i = 0; i < productsToExport.length; i += 2) {
         const yPos = 30 + (Math.floor(i / 2) % 3) * 80;
         
         // Check if we need a new page
@@ -112,13 +136,13 @@ export const PDFGenerator: React.FC = () => {
         
         // Process current row (up to 2 products)
         for (let j = 0; j < 2; j++) {
-          if (i + j < products.length) {
-            const product = products[i + j];
+          if (i + j < productsToExport.length) {
+            const product = productsToExport[i + j];
             const xPos = 10 + j * (pageWidth / 2 - 15);
             
             // Product cell background
             pdf.setFillColor(255, 255, 255);
-            pdf.roundedRect(xPos, yPos, pageWidth / 2 - 20, 70, 2, 2, 'F');
+            pdf.roundedRect(xPos, yPos, pageWidth / 2 - 20, 75, 2, 2, 'F');
             
             // Product name
             pdf.setFontSize(12);
@@ -128,10 +152,17 @@ export const PDFGenerator: React.FC = () => {
             // Product details
             pdf.setFontSize(10);
             pdf.setTextColor(80, 80, 80);
-            pdf.text(`Peso: ${product.peso}`, xPos + 5, yPos + 20);
-            pdf.text(`Preço unitário: ${formatCurrency(product.precoUnitario)}`, xPos + 5, yPos + 30);
-            pdf.text(`Preço fardo: ${formatCurrency(product.precoFardo)}`, xPos + 5, yPos + 40);
-            pdf.text(`Qtd. por fardo: ${product.qtdFardo}`, xPos + 5, yPos + 50);
+            let detailY = yPos + 20;
+            
+            if (product.marca) {
+              pdf.text(`Marca: ${product.marca}`, xPos + 5, detailY);
+              detailY += 8;
+            }
+            
+            pdf.text(`Peso: ${product.peso}`, xPos + 5, detailY);
+            pdf.text(`Preço unitário: ${formatCurrency(product.precoUnitario)}`, xPos + 5, detailY + 8);
+            pdf.text(`Preço fardo: ${formatCurrency(product.precoFardo)}`, xPos + 5, detailY + 16);
+            pdf.text(`Qtd. por fardo: ${product.qtdFardo}`, xPos + 5, detailY + 24);
             
             // Try to add product image if available
             if (product.imagePath && product.imagePath !== '/placeholder.svg') {
@@ -182,9 +213,13 @@ export const PDFGenerator: React.FC = () => {
         pdf.text(`Gerado em ${today.toLocaleDateString('pt-BR')}`, 15, pageHeight - 10);
       }
       
-      // Save the PDF
-      pdf.save('catalogo-produtos.pdf');
-      toast.success('Catálogo PDF gerado com sucesso!');
+      // Save the PDF with appropriate filename
+      const filename = isFiltered 
+        ? `catalogo-produtos-filtrado-${productCount}.pdf` 
+        : 'catalogo-produtos.pdf';
+      
+      pdf.save(filename);
+      toast.success(`Catálogo PDF gerado com sucesso! (${productCount} produto${productCount !== 1 ? 's' : ''})`);
     } catch (error) {
       console.error('Error generating PDF:', error);
       toast.error('Erro ao gerar PDF. Tente novamente.');
@@ -236,7 +271,7 @@ export const PDFGenerator: React.FC = () => {
             
             {/* Produtos */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              {products.map(product => (
+              {productsToExport.map(product => (
                 <div key={product.id} className="border rounded-md p-4 shadow-sm">
                   <div className="flex justify-between items-start">
                     <div>

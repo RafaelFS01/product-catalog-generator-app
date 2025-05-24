@@ -1,4 +1,3 @@
-
 export interface Product {
   id: string;
   nome: string;
@@ -7,8 +6,15 @@ export interface Product {
   precoUnitario: number;
   qtdFardo: number;
   imagePath: string;
+  marca?: string;
   timestampCriacao: number;
   timestampAtualizacao: number;
+}
+
+export interface Marca {
+  id: string;
+  nome: string;
+  timestampCriacao: number;
 }
 
 export interface AuthUser {
