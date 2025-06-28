@@ -143,7 +143,7 @@ export const PDFGenerator: React.FC<PDFGeneratorProps> = ({
       pdf.setTextColor(hexToRgb(colors.dark).r, hexToRgb(colors.dark).g, hexToRgb(colors.dark).b);
       pdf.setFontSize(28);
       pdf.setFont(undefined, 'bold');
-      pdf.text('CATALOGO', pageWidth / 2, 140, { align: 'center' });
+      pdf.text('CATÁLOGO', pageWidth / 2, 140, { align: 'center' });
       
       pdf.setFontSize(24);
       pdf.setFont(undefined, 'normal');
@@ -156,12 +156,11 @@ export const PDFGenerator: React.FC<PDFGeneratorProps> = ({
       
       // Box informativo SEM CONTADOR
       pdf.setFillColor(hexToRgb(colors.background).r, hexToRgb(colors.background).g, hexToRgb(colors.background).b);
-      pdf.roundedRect(45, 180, pageWidth - 90, 40, 4, 4, 'F');
+      pdf.roundedRect(45, 204.5, pageWidth - 90, 8, 4, 4, 'F');
       
       pdf.setTextColor(hexToRgb(colors.text).r, hexToRgb(colors.text).g, hexToRgb(colors.text).b);
       pdf.setFontSize(14);
       pdf.setFont(undefined, 'bold');
-      pdf.text('CATÁLOGO PREMIUM', pageWidth / 2, 195, { align: 'center' });
       
       // Data
       pdf.setFontSize(11);
@@ -181,7 +180,7 @@ export const PDFGenerator: React.FC<PDFGeneratorProps> = ({
         pdf.setTextColor(255, 255, 255);
         pdf.setFontSize(11);
         pdf.setFont(undefined, 'bold');
-        pdf.text('CATALOGO DE PRODUTOS', 15, 13);
+        pdf.text('CATÁLOGO DE PRODUTOS', 15, 13);
         
         pdf.setFillColor(255, 255, 255);
         pdf.circle(pageWidth - 20, 10, 6, 'F');
@@ -314,33 +313,38 @@ export const PDFGenerator: React.FC<PDFGeneratorProps> = ({
           let detailY = imgAreaY + imgSize + 8;
           
           if (product.marca) {
-            pdf.setFontSize(9);
+            pdf.setFontSize(10);
             pdf.setTextColor(hexToRgb(colors.muted).r, hexToRgb(colors.muted).g, hexToRgb(colors.muted).b);
             pdf.setFont(undefined, 'italic');
-            pdf.text(`Marca: ${truncateText(product.marca, 20)}`, xPos + 8, detailY, { align: 'left' });
-            detailY += 8;
+            pdf.text(`Marca: ${truncateText(product.marca, 20)}`, xPos + cardWidth/2, detailY, { align: 'center' });
+            detailY += 10;
           }
           
-          pdf.setFontSize(9);
+          // Organizar informações em duas colunas
+          const leftColX = xPos + 8;
+          const rightColX = xPos + cardWidth/2 + 4;
+          
+          // Coluna esquerda: Peso e Preço unitário
+          pdf.setFontSize(10);
           pdf.setFont(undefined, 'normal');
           pdf.setTextColor(hexToRgb(colors.text).r, hexToRgb(colors.text).g, hexToRgb(colors.text).b);
-          pdf.text(`Peso: ${product.peso}`, xPos + 8, detailY);
-          detailY += 8;
+          pdf.text(`Peso: ${product.peso}`, leftColX, detailY);
           
-          // Preços
-          pdf.setFontSize(10);
+          pdf.setFontSize(11);
           pdf.setFont(undefined, 'bold');
           pdf.setTextColor(hexToRgb(colors.success).r, hexToRgb(colors.success).g, hexToRgb(colors.success).b);
-          pdf.text(`Unit: ${formatCurrency(product.precoUnitario)}`, xPos + 8, detailY);
+          pdf.text(`Unit: ${formatCurrency(product.precoUnitario)}`, leftColX, detailY + 10);
           
+          // Coluna direita: Preço do fardo e Quantidade por fardo
+          pdf.setFontSize(11);
+          pdf.setFont(undefined, 'bold');
           pdf.setTextColor(hexToRgb(colors.accent).r, hexToRgb(colors.accent).g, hexToRgb(colors.accent).b);
-          pdf.text(`Fardo: ${formatCurrency(product.precoFardo)}`, xPos + cardWidth/2 + 4, detailY);
-          detailY += 8;
+          pdf.text(`Fardo: ${formatCurrency(product.precoFardo)}`, rightColX, detailY);
           
-          pdf.setFontSize(9);
+          pdf.setFontSize(10);
           pdf.setFont(undefined, 'normal');
           pdf.setTextColor(hexToRgb(colors.text).r, hexToRgb(colors.text).g, hexToRgb(colors.text).b);
-          pdf.text(`Qtd/Fardo: ${product.qtdFardo}`, xPos + 8, detailY);
+          pdf.text(`Qtd/Fardo: ${product.qtdFardo}`, rightColX, detailY + 10);
         }
       }
       
@@ -414,9 +418,6 @@ export const PDFGenerator: React.FC<PDFGeneratorProps> = ({
                 <h3 className="text-2xl mb-4">DE PRODUTOS</h3>
                 <div className="h-0.5 bg-yellow-500 w-16 mx-auto mb-4"></div>
                 <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <p className="font-semibold text-lg">
-                    CATÁLOGO PREMIUM
-                  </p>
                 </div>
                 <p className="text-sm text-gray-600">
                   Gerado em {new Date().toLocaleDateString('pt-BR')}
@@ -452,13 +453,25 @@ export const PDFGenerator: React.FC<PDFGeneratorProps> = ({
                       </div>
                     </div>
                     
-                    <div className="space-y-2 text-sm text-center">
-                      <p className="text-gray-700 font-medium">Peso: {product.peso}</p>
-                      <div className="flex justify-between">
-                        <p className="text-green-600 font-bold">Unit: {formatCurrency(product.precoUnitario)}</p>
-                        <p className="text-yellow-600 font-bold">Fardo: {formatCurrency(product.precoFardo)}</p>
+                    <div className="space-y-3 text-sm">
+                      {product.marca && (
+                        <p className="text-gray-600 italic text-center font-medium">Marca: {product.marca}</p>
+                      )}
+                      
+                      {/* Organizar em duas colunas */}
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        {/* Coluna esquerda */}
+                        <div className="space-y-2">
+                          <p className="text-gray-700 font-medium">Peso: {product.peso}</p>
+                          <p className="text-green-600 font-bold text-base">Unit: {formatCurrency(product.precoUnitario)}</p>
+                        </div>
+                        
+                        {/* Coluna direita */}
+                        <div className="space-y-2">
+                          <p className="text-yellow-600 font-bold text-base">Fardo: {formatCurrency(product.precoFardo)}</p>
+                          <p className="text-gray-600 font-medium">Qtd/Fardo: {product.qtdFardo}</p>
+                        </div>
                       </div>
-                      <p className="text-gray-600">Qtd/Fardo: {product.qtdFardo}</p>
                     </div>
                   </div>
                 </div>

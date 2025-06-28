@@ -52,10 +52,6 @@ export function Combobox({
 
   const selectedOption = options.find((option) => option.value === value)
 
-  const filteredOptions = options.filter((option) =>
-    option.label.toLowerCase().includes(searchValue.toLowerCase())
-  )
-
   const handleSelect = (optionValue: string) => {
     onSelect(optionValue === value ? "" : optionValue)
     setOpen(false)
@@ -74,11 +70,14 @@ export function Combobox({
     }
   }
 
-  const showCreateOption = onCreateNew && 
-    searchValue.trim() && 
-    !filteredOptions.some(option => 
-      option.label.toLowerCase() === searchValue.toLowerCase()
-    )
+  // Determinar se deve mostrar opção de criar novo
+  const showCreateOption = React.useMemo(() => {
+    return onCreateNew && 
+      searchValue.trim() && 
+      !options.some(option => 
+        option.label.toLowerCase() === searchValue.toLowerCase()
+      )
+  }, [onCreateNew, searchValue, options])
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -95,7 +94,7 @@ export function Combobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">
-        <Command>
+        <Command shouldFilter={false}>
           <CommandInput 
             placeholder={searchPlaceholder}
             value={searchValue}
@@ -104,23 +103,30 @@ export function Combobox({
           <CommandList>
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
-              {filteredOptions.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  value={option.value}
-                  onSelect={() => handleSelect(option.value)}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === option.value ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  {option.label}
-                </CommandItem>
-              ))}
+              {options
+                .filter((option) =>
+                  option.label.toLowerCase().includes(searchValue.toLowerCase())
+                )
+                .map((option) => (
+                  <CommandItem
+                    key={option.value}
+                    value={option.label}
+                    onSelect={() => handleSelect(option.value)}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === option.value ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {option.label}
+                  </CommandItem>
+                ))}
               {showCreateOption && (
-                <CommandItem onSelect={handleCreateNew}>
+                <CommandItem 
+                  value={`create-new-${searchValue}`}
+                  onSelect={handleCreateNew}
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   {createNewText}: "{searchValue}"
                 </CommandItem>
