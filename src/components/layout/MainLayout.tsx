@@ -3,7 +3,7 @@ import React from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LogOut, Package, FileText, Settings, Users, ShoppingCart } from 'lucide-react';
+import { LogOut, Package, FileText, Settings, Users, ShoppingCart, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const MainLayout: React.FC = () => {
@@ -68,6 +68,14 @@ export const MainLayout: React.FC = () => {
                   className="px-3 py-2 text-sm rounded-md inline-flex items-center gap-1 hover:bg-secondary-foreground/10"
                 >
                   <ShoppingCart size={16} /> Pedidos
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  to="/pagamentos" 
+                  className="px-3 py-2 text-sm rounded-md inline-flex items-center gap-1 hover:bg-secondary-foreground/10"
+                >
+                  <CreditCard size={16} /> Pagamentos
                 </Link>
               </li>
               <li>

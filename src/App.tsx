@@ -23,6 +23,7 @@ import ManagePedidos from "./pages/ManagePedidos";
 import CreatePedido from "./pages/CreatePedido";
 import EditPedido from "./pages/EditPedido";
 import PedidoDetails from "./pages/PedidoDetails";
+import ManagePagamentos from "./pages/ManagePagamentos";
 import Settings from "./pages/Settings";
 import Dashboard from "./pages/Dashboard";
 import { MainLayout } from "./components/layout/MainLayout";
@@ -61,6 +62,7 @@ const App = () => (
                 <Route path="pedidos/criar" element={<CreatePedido />} />
                 <Route path="pedidos/editar/:id" element={<EditPedido />} />
                 <Route path="pedidos/detalhes/:id" element={<PedidoDetails />} />
+                <Route path="pagamentos" element={<ManagePagamentos />} />
                 <Route path="configuracoes" element={<Settings />} />
                 <Route path="dashboard" element={<Dashboard />} />
               </Route>

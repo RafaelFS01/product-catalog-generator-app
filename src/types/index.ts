@@ -68,7 +68,14 @@ export interface Pedido {
   itens: ItemPedido[];
   valorTotal: number;
   status: 'EM_ABERTO' | 'FINALIZADO' | 'CANCELADO';
+  dataLimitePagamento: string; // Data limite para pagamento (ISO string)
   observacoes?: string;
   timestampCriacao: number;
   timestampAtualizacao: number;
+}
+
+export interface PagamentoPendente {
+  pedido: Pedido;
+  diasAtraso: number;
+  statusPagamento: 'NO_PRAZO' | 'VENCIDO' | 'VENCENDO_HOJE';
 }

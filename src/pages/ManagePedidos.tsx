@@ -233,7 +233,7 @@ const ManagePedidos: React.FC = () => {
                           </Badge>
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-muted-foreground mb-2">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm text-muted-foreground mb-2">
                           <div>
                             <span className="font-medium">Cliente:</span> {pedido.cliente.nome}
                           </div>
@@ -244,6 +244,13 @@ const ManagePedidos: React.FC = () => {
                           </div>
                           <div>
                             <span className="font-medium">Itens:</span> {pedido.itens.length}
+                          </div>
+                          <div>
+                            <span className="font-medium">Vencimento:</span> {
+                              pedido.dataLimitePagamento ? 
+                                new Date(pedido.dataLimitePagamento).toLocaleDateString('pt-BR') : 
+                                'Não definido'
+                            }
                           </div>
                         </div>
                         

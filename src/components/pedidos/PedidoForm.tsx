@@ -39,6 +39,7 @@ const itemPedidoSchema = z.object({
 const pedidoSchema = z.object({
   clienteId: z.string().min(1, 'Cliente é obrigatório'),
   itens: z.array(itemPedidoSchema).min(1, 'Adicione pelo menos um item ao pedido'),
+  dataLimitePagamento: z.string().min(1, 'Data limite de pagamento é obrigatória'),
   observacoes: z.string().optional()
 });
 
@@ -74,6 +75,7 @@ const PedidoForm: React.FC<PedidoFormProps> = ({ pedido, isEditing = false }) =>
     defaultValues: {
       clienteId: '',
       itens: [],
+      dataLimitePagamento: '',
       observacoes: ''
     }
   });
@@ -94,6 +96,7 @@ const PedidoForm: React.FC<PedidoFormProps> = ({ pedido, isEditing = false }) =>
       reset({
         clienteId: pedido.clienteId,
         itens: pedido.itens,
+        dataLimitePagamento: pedido.dataLimitePagamento || '',
         observacoes: pedido.observacoes || ''
       });
       
@@ -122,6 +125,7 @@ const PedidoForm: React.FC<PedidoFormProps> = ({ pedido, isEditing = false }) =>
         itens: data.itens as ItemPedido[],
         valorTotal,
         status: 'EM_ABERTO' as const,
+        dataLimitePagamento: data.dataLimitePagamento,
         observacoes: data.observacoes
       };
 
@@ -344,6 +348,30 @@ const PedidoForm: React.FC<PedidoFormProps> = ({ pedido, isEditing = false }) =>
             {errors.itens && (
               <p className="text-sm text-destructive mt-2">{errors.itens.message}</p>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Data Limite de Pagamento */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Data Limite de Pagamento</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label htmlFor="dataLimitePagamento">Data Limite para Pagamento</Label>
+              <Input
+                id="dataLimitePagamento"
+                type="date"
+                {...register('dataLimitePagamento')}
+                min={new Date().toISOString().split('T')[0]}
+              />
+              {errors.dataLimitePagamento && (
+                <p className="text-sm text-destructive">{errors.dataLimitePagamento.message}</p>
+              )}
+              <p className="text-sm text-muted-foreground">
+                Defina até quando o pagamento deste pedido deve ser realizado
+              </p>
+            </div>
           </CardContent>
         </Card>
 
