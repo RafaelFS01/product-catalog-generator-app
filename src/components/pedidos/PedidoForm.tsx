@@ -247,27 +247,33 @@ const PedidoForm: React.FC<PedidoFormProps> = ({ pedido, isEditing = false }) =>
               </div>
 
               {clienteSelecionado && (
-                <div className="p-4 bg-muted rounded-lg">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-semibold">{clienteSelecionado.nome}</h3>
-                    <Badge variant={clienteSelecionado.tipo === 'PF' ? 'default' : 'secondary'}>
-                      {clienteSelecionado.tipo === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'}
-                    </Badge>
+                <div className="p-3 sm:p-4 bg-muted rounded-lg">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                      <h3 className="font-semibold text-base sm:text-lg">{clienteSelecionado.nome}</h3>
+                      <Badge variant={clienteSelecionado.tipo === 'PF' ? 'default' : 'secondary'}>
+                        {clienteSelecionado.tipo === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
-                    <div>
-                      <span className="font-medium">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-muted-foreground">
+                    <div className="space-y-1">
+                      <span className="font-medium block">
                         {clienteSelecionado.tipo === 'PF' ? 'CPF:' : 'CNPJ:'}
-                      </span> {formatDocumento(clienteSelecionado.documento, clienteSelecionado.tipo)}
+                      </span>
+                      <span className="block font-mono">{formatDocumento(clienteSelecionado.documento, clienteSelecionado.tipo)}</span>
                     </div>
-                    <div>
-                      <span className="font-medium">E-mail:</span> {clienteSelecionado.email}
+                    <div className="space-y-1">
+                      <span className="font-medium block">E-mail:</span>
+                      <span className="block truncate" title={clienteSelecionado.email}>{clienteSelecionado.email}</span>
                     </div>
-                    <div>
-                      <span className="font-medium">Telefone:</span> {clienteSelecionado.telefone}
+                    <div className="space-y-1">
+                      <span className="font-medium block">Telefone:</span>
+                      <span className="block">{clienteSelecionado.telefone}</span>
                     </div>
-                    <div>
-                      <span className="font-medium">Cidade:</span> {clienteSelecionado.endereco.cidade}/{clienteSelecionado.endereco.estado}
+                    <div className="space-y-1">
+                      <span className="font-medium block">Cidade:</span>
+                      <span className="block">{clienteSelecionado.endereco.cidade}/{clienteSelecionado.endereco.estado}</span>
                     </div>
                   </div>
                 </div>
@@ -396,22 +402,19 @@ const PedidoForm: React.FC<PedidoFormProps> = ({ pedido, isEditing = false }) =>
         </Card>
 
         {/* Botões de Ação */}
-        <div className="flex gap-4 pt-4">
+        <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t">
           <Button
             type="submit"
-            disabled={isSubmitting || itens.length === 0 || !clienteSelecionado}
-            className="min-w-[120px]"
+            disabled={isSubmitting || !clienteSelecionado || itens.length === 0}
+            className="w-full sm:flex-1"
           >
             {isSubmitting ? (
               <>
-                <Loader2 size={16} className="mr-2 animate-spin" />
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                 Salvando...
               </>
             ) : (
-              <>
-                <Save size={16} className="mr-2" />
-                {isEditing ? 'Atualizar' : 'Criar Pedido'}
-              </>
+              isEditing ? 'Atualizar Pedido' : 'Criar Pedido'
             )}
           </Button>
           
@@ -420,6 +423,7 @@ const PedidoForm: React.FC<PedidoFormProps> = ({ pedido, isEditing = false }) =>
             variant="outline"
             onClick={() => navigate('/pedidos')}
             disabled={isSubmitting}
+            className="w-full sm:w-auto"
           >
             Cancelar
           </Button>
@@ -428,88 +432,98 @@ const PedidoForm: React.FC<PedidoFormProps> = ({ pedido, isEditing = false }) =>
 
       {/* Dialog para Adicionar Produto */}
       <AlertDialog open={showAddProduct} onOpenChange={setShowAddProduct}>
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
           <AlertDialogHeader>
-            <AlertDialogTitle>Adicionar Produto</AlertDialogTitle>
+            <AlertDialogTitle>Adicionar Produto ao Pedido</AlertDialogTitle>
             <AlertDialogDescription>
-              Selecione um produto e informe a quantidade.
+              Selecione um produto e informe a quantidade desejada.
             </AlertDialogDescription>
           </AlertDialogHeader>
           
-          <div className="space-y-4">
+          <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Produto</Label>
+              <Label>Produto *</Label>
               <Combobox
                 options={productOptions}
                 value={produtoSelecionado?.id || ''}
-                onSelect={(productId) => {
-                  const product = products.find(p => p.id === productId);
-                  setProdutoSelecionado(product || null);
-                }}
+                onSelect={handleAddProduct}
                 placeholder="Buscar produto..."
                 disabled={loadingProducts}
               />
             </div>
 
             {produtoSelecionado && (
-              <div className="p-3 bg-muted rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="font-semibold">{produtoSelecionado.nome}</span>
-                  <Badge variant="outline">{produtoSelecionado.peso}</Badge>
-                  {produtoSelecionado.marca && <Badge variant="secondary">{produtoSelecionado.marca}</Badge>}
+              <div className="p-3 sm:p-4 bg-muted rounded-lg">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-3">
+                    <h4 className="font-semibold">{produtoSelecionado.nome}</h4>
+                    <Badge variant="outline">{produtoSelecionado.peso}</Badge>
+                    {produtoSelecionado.marca && (
+                      <Badge variant="secondary">{produtoSelecionado.marca}</Badge>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-primary">
+                      {formatCurrency(produtoSelecionado.precoUnitario)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">por unidade</div>
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Preço unitário: {formatCurrency(produtoSelecionado.precoUnitario)}
-                </p>
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="quantidade">Quantidade</Label>
+              <Label htmlFor="quantidade">Quantidade *</Label>
               <Input
                 id="quantidade"
                 type="number"
                 min="1"
                 value={quantidadeProduto}
-                onChange={(e) => setQuantidadeProduto(Math.max(1, parseInt(e.target.value) || 1))}
+                onChange={(e) => setQuantidadeProduto(parseInt(e.target.value) || 0)}
+                placeholder="1"
+                disabled={!produtoSelecionado}
               />
             </div>
 
-            {produtoSelecionado && (
-              <div className="text-right">
-                <span className="text-lg font-bold">
-                  Total: {formatCurrency(produtoSelecionado.precoUnitario * quantidadeProduto)}
-                </span>
+            {produtoSelecionado && quantidadeProduto > 0 && (
+              <div className="p-3 sm:p-4 bg-primary/5 rounded-lg border border-primary/20">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <span className="font-medium">Total do item:</span>
+                  <span className="text-xl font-bold text-primary">
+                    {formatCurrency(produtoSelecionado.precoUnitario * quantidadeProduto)}
+                  </span>
+                </div>
               </div>
             )}
           </div>
-
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleAddProduct}
-              disabled={!produtoSelecionado || quantidadeProduto < 1}
+              disabled={!produtoSelecionado || quantidadeProduto <= 0}
+              className="w-full sm:w-auto"
             >
-              Adicionar
+              Adicionar ao Pedido
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Dialog para Confirmar Remoção */}
+      {/* Dialog para Remover Item */}
       <AlertDialog open={itemToRemove !== null} onOpenChange={() => setItemToRemove(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[95vw] max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Remover Item</AlertDialogTitle>
             <AlertDialogDescription>
               Tem certeza que deseja remover este item do pedido?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
             <AlertDialogAction 
               onClick={confirmRemoveItem}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="w-full sm:w-auto bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Remover
             </AlertDialogAction>

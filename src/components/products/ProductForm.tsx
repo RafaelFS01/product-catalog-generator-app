@@ -146,222 +146,250 @@ export const ProductForm: React.FC<ProductFormProps> = ({ editingProduct, isEdit
   };
 
   return (
-    <Card className="max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>{isEdit ? 'Editar Produto' : 'Cadastrar Novo Produto'}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid gap-6 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="nome"
-                render={({ field }) => (
-                  <FormItem className="sm:col-span-2">
-                    <FormLabel>Nome do Produto</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: Arroz Branco Premium" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="peso"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Peso</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: 5 kg" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="precoUnitario"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Preço Unitário (R$)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01"
-                        min="0" 
-                        placeholder="0.00" 
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="precoFardo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Preço do Fardo (R$)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01"
-                        min="0" 
-                        placeholder="0.00" 
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="qtdFardo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quantidade por Fardo</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        min="1" 
-                        placeholder="6" 
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="marca"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Marca</FormLabel>
-                    <FormControl>
-                      <Combobox
-                        options={marcaOptions}
-                        value={field.value}
-                        onSelect={field.onChange}
-                        onCreateNew={handleCreateMarca}
-                        placeholder="Selecionar marca..."
-                        searchPlaceholder="Buscar marca..."
-                        emptyText="Nenhuma marca encontrada"
-                        createNewText="Criar marca"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <FormLabel htmlFor="product-image">Imagem do Produto</FormLabel>
+    <div className="w-full max-w-4xl mx-auto px-4 sm:px-0">
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl sm:text-2xl">
+            {isEdit ? 'Editar Produto' : 'Cadastrar Novo Produto'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-6">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Grid responsivo dos campos principais */}
+              <div className="grid gap-4 sm:gap-6">
+                {/* Nome do produto - sempre span completo */}
+                <FormField
+                  control={form.control}
+                  name="nome"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome do Produto</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: Arroz Branco Premium" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
-                {isUploadingImage && (
-                  <div className="mt-2 space-y-2">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Upload size={16} className="animate-pulse" />
-                      Enviando imagem...
-                    </div>
-                    <Progress value={undefined} className="w-full" />
-                  </div>
-                )}
+                {/* Primeira linha - Peso e Marca */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <FormField
+                    control={form.control}
+                    name="peso"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Peso</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: 5 kg" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="marca"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Marca</FormLabel>
+                        <FormControl>
+                          <Combobox
+                            options={marcaOptions}
+                            value={field.value}
+                            onSelect={field.onChange}
+                            onCreateNew={handleCreateMarca}
+                            placeholder="Selecionar marca..."
+                            searchPlaceholder="Buscar marca..."
+                            emptyText="Nenhuma marca encontrada"
+                            createNewText="Criar marca"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 
-                <div className="mt-1 flex items-center gap-4">
-                  {previewUrl && (
-                    <div className="relative w-32 h-32 border rounded overflow-hidden flex items-center justify-center bg-muted">
-                      <img 
-                        src={previewUrl} 
-                        alt="Preview" 
-                        className="w-full h-full object-cover" 
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        className="absolute top-1 right-1 h-6 w-6 p-0"
-                        onClick={handleRemoveImage}
-                      >
-                        <X size={12} />
-                      </Button>
+                {/* Segunda linha - Preços e Quantidade */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                  <FormField
+                    control={form.control}
+                    name="precoUnitario"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Preço Unitário (R$)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.01"
+                            min="0" 
+                            placeholder="0.00" 
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="precoFardo"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Preço do Fardo (R$)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.01"
+                            min="0" 
+                            placeholder="0.00" 
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="qtdFardo"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Quantidade por Fardo</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="1" 
+                            placeholder="6" 
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+              
+              {/* Seção de Upload de Imagem */}
+              <div className="space-y-4">
+                <div>
+                  <FormLabel htmlFor="product-image">Imagem do Produto</FormLabel>
+                  
+                  {isUploadingImage && (
+                    <div className="mt-2 space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Upload size={16} className="animate-pulse" />
+                        Enviando imagem...
+                      </div>
+                      <Progress value={undefined} className="w-full" />
                     </div>
                   )}
                   
-                  <div className="flex-1">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full"
-                      disabled={isUploadingImage}
-                      onClick={handleSelectImage}
-                    >
-                      {isUploadingImage ? (
-                        <>
-                          <Upload size={16} className="mr-2 animate-pulse" />
-                          Enviando...
-                        </>
-                      ) : (
-                        <>
-                          {previewUrl ? (
-                            <ImageIcon size={16} className="mr-2" />
-                          ) : (
-                            <Upload size={16} className="mr-2" />
-                          )}
-                          {previewUrl ? 'Trocar Imagem' : 'Selecionar Imagem'}
-                        </>
+                  {/* Layout responsivo para preview e controles */}
+                  <div className="mt-3 space-y-4">
+                    {/* Preview da imagem */}
+                    {previewUrl && (
+                      <div className="flex justify-center">
+                        <div className="relative w-full max-w-sm aspect-square border rounded-lg overflow-hidden flex items-center justify-center bg-muted">
+                          <img 
+                            src={previewUrl} 
+                            alt="Preview" 
+                            className="w-full h-full object-cover" 
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-2 right-2 h-8 w-8 p-0"
+                            onClick={handleRemoveImage}
+                          >
+                            <X size={16} />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Controles de upload */}
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <input
+                        id="product-image"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
+                      
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleSelectImage}
+                        disabled={isUploadingImage}
+                        className="w-full sm:w-auto"
+                      >
+                        <Upload size={16} className="mr-2" />
+                        {previewUrl ? 'Alterar Imagem' : 'Selecionar Imagem'}
+                      </Button>
+                      
+                      {previewUrl && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleRemoveImage}
+                          className="w-full sm:w-auto text-destructive hover:text-destructive"
+                        >
+                          <X size={16} className="mr-2" />
+                          Remover Imagem
+                        </Button>
                       )}
-                    </Button>
-                    <Input
-                      id="product-image"
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImageChange}
-                      disabled={isUploadingImage}
-                    />
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Formatos aceitos: JPG, PNG, GIF, WebP (máx. 5MB)
+                    </div>
+                    
+                    <p className="text-sm text-muted-foreground">
+                      Formatos aceitos: JPG, PNG, GIF, WebP. Tamanho máximo: 5MB.
                     </p>
                   </div>
                 </div>
               </div>
-            </div>
-            
-            <div className="flex justify-end gap-4 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate(-1)}
-              >
-                <ArrowLeft size={16} className="mr-2" />
-                Voltar
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={isSubmitting}
-              >
-                <Save size={16} className="mr-2" />
-                {isSubmitting ? 'Salvando...' : 'Salvar Produto'}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+              
+              {/* Botões de ação */}
+              <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || isUploadingImage}
+                  className="w-full sm:w-auto sm:flex-1"
+                >
+                  {isSubmitting || isUploadingImage ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                      {isUploadingImage ? 'Enviando imagem...' : 'Salvando...'}
+                    </>
+                  ) : (
+                    isEdit ? 'Atualizar Produto' : 'Cadastrar Produto'
+                  )}
+                </Button>
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate(-1)}
+                  disabled={isSubmitting || isUploadingImage}
+                  className="w-full sm:w-auto"
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useProducts } from '@/contexts/ProductContext';
@@ -46,19 +45,19 @@ const ProductDetails: React.FC = () => {
   
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-10 w-32" />
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <Skeleton className="h-6 sm:h-8 w-48 sm:w-64" />
+          <Skeleton className="h-10 w-full sm:w-32" />
         </div>
         <Card>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="md:col-span-1">
-                <Skeleton className="h-72 w-full" />
+          <CardContent className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-1">
+                <Skeleton className="h-64 sm:h-72 w-full" />
               </div>
-              <div className="md:col-span-2 space-y-6">
-                <Skeleton className="h-10 w-3/4" />
+              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+                <Skeleton className="h-8 sm:h-10 w-3/4" />
                 <div className="space-y-4">
                   <Skeleton className="h-6 w-full" />
                   <Skeleton className="h-6 w-full" />
@@ -75,10 +74,10 @@ const ProductDetails: React.FC = () => {
   
   if (!product) {
     return (
-      <div className="text-center py-12">
-        <h2 className="text-2xl font-semibold mb-4">Produto não encontrado</h2>
+      <div className="text-center py-8 sm:py-12">
+        <h2 className="text-xl sm:text-2xl font-semibold mb-4">Produto não encontrado</h2>
         <p className="text-muted-foreground mb-6">O produto que você está procurando não existe ou foi removido.</p>
-        <Button asChild>
+        <Button asChild className="w-full sm:w-auto">
           <Link to="/gerenciar">
             <ArrowLeft size={16} className="mr-2" />
             Voltar para Gerenciar Produtos
@@ -89,17 +88,17 @@ const ProductDetails: React.FC = () => {
   }
   
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <h1 className="text-2xl font-bold">Detalhes do Produto</h1>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" asChild>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-xl sm:text-2xl font-bold">Detalhes do Produto</h1>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button variant="outline" asChild className="w-full sm:w-auto">
             <Link to="/gerenciar">
               <ArrowLeft size={16} className="mr-2" />
               Voltar
             </Link>
           </Button>
-          <Button asChild>
+          <Button asChild className="w-full sm:w-auto">
             <Link to={`/editar/${product.id}`}>
               <Edit size={16} className="mr-2" />
               Editar
@@ -107,7 +106,7 @@ const ProductDetails: React.FC = () => {
           </Button>
           <Button 
             variant="outline" 
-            className="text-destructive border-destructive hover:bg-destructive/10"
+            className="w-full sm:w-auto text-destructive border-destructive hover:bg-destructive/10"
             onClick={() => setShowDeleteDialog(true)}
           >
             <Trash2 size={16} className="mr-2" />
@@ -117,37 +116,54 @@ const ProductDetails: React.FC = () => {
       </div>
       
       <Card>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-1">
-              <div className="bg-muted rounded-md overflow-hidden flex items-center justify-center h-full p-4">
+        <CardContent className="p-4 sm:p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="lg:col-span-1">
+              <div className="bg-muted rounded-md overflow-hidden flex items-center justify-center aspect-square lg:aspect-auto lg:h-72 p-4">
                 <img 
                   src={product.imagePath} 
                   alt={product.nome} 
-                  className="max-w-full max-h-72 object-contain" 
+                  className="max-w-full max-h-full object-contain" 
                 />
               </div>
             </div>
-            <div className="md:col-span-2 space-y-6">
-              <h2 className="text-2xl font-semibold">{product.nome}</h2>
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-semibold mb-2">{product.nome}</h2>
+                {product.marca && (
+                  <div className="inline-block bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
+                    {product.marca}
+                  </div>
+                )}
+              </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Peso</p>
-                  <p className="font-medium">{product.peso}</p>
+                  <p className="font-medium text-base sm:text-lg">{product.peso}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Quantidade por Fardo</p>
-                  <p className="font-medium">{product.qtdFardo} unidades</p>
+                  <p className="font-medium text-base sm:text-lg">{product.qtdFardo} unidades</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Preço Unitário</p>
-                  <p className="font-medium">{formatCurrency(product.precoUnitario)}</p>
+                  <p className="font-semibold text-lg sm:text-xl text-primary">{formatCurrency(product.precoUnitario)}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Preço do Fardo</p>
-                  <p className="font-medium">{formatCurrency(product.precoFardo)}</p>
+                  <p className="font-semibold text-lg sm:text-xl text-primary">{formatCurrency(product.precoFardo)}</p>
                 </div>
+              </div>
+              
+              <div className="bg-muted/50 rounded-lg p-3 sm:p-4">
+                <p className="text-sm text-muted-foreground mb-1">Economia por Fardo</p>
+                <p className="font-medium">
+                  {formatCurrency((product.precoUnitario * product.qtdFardo) - product.precoFardo)} 
+                  <span className="text-sm text-muted-foreground ml-2">
+                    ({(((product.precoUnitario * product.qtdFardo) - product.precoFardo) / (product.precoUnitario * product.qtdFardo) * 100).toFixed(1)}% desconto)
+                  </span>
+                </p>
               </div>
               
               <Separator />
@@ -155,11 +171,11 @@ const ProductDetails: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div className="space-y-1">
                   <p className="text-muted-foreground">Cadastrado em</p>
-                  <p>{formatDate(product.timestampCriacao)}</p>
+                  <p className="font-medium">{formatDate(product.timestampCriacao)}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-muted-foreground">Última atualização</p>
-                  <p>{formatDate(product.timestampAtualizacao)}</p>
+                  <p className="font-medium">{formatDate(product.timestampAtualizacao)}</p>
                 </div>
               </div>
             </div>
@@ -168,16 +184,19 @@ const ProductDetails: React.FC = () => {
       </Card>
       
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[95vw] max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
               Tem certeza que deseja excluir o produto "{product.nome}"? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete} 
+              className="w-full sm:w-auto bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
