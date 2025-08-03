@@ -30,17 +30,17 @@ export interface CatalogConfig {
 export interface Cliente {
   id: string;
   nome: string;
-  tipo: 'PF' | 'PJ'; // Pessoa Física ou Pessoa Jurídica
-  documento: string; // CPF ou CNPJ
-  telefone: string;
-  email: string;
-  endereco: {
-    rua: string;
-    numero: string;
-    bairro: string;
-    cidade: string;
-    estado: string;
-    cep: string;
+  tipo?: 'PF' | 'PJ';
+  documento?: string;
+  telefone?: string;
+  email?: string;
+  endereco?: {
+    rua?: string;
+    numero?: string;
+    bairro?: string;
+    cidade?: string;
+    estado?: string;
+    cep?: string;
   };
   timestampCriacao: number;
   timestampAtualizacao: number;
@@ -59,8 +59,8 @@ export interface ItemPedido {
 export interface Pedido {
   id: string;
   numero: string; // Número único do pedido (ex: PED-2024-001)
-  clienteId: string;
-  cliente: {
+  clienteId?: string;
+  cliente?: {
     nome: string;
     documento: string;
     tipo: 'PF' | 'PJ';

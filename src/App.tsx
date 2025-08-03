@@ -28,8 +28,47 @@ import Settings from "./pages/Settings";
 import Dashboard from "./pages/Dashboard";
 import { MainLayout } from "./components/layout/MainLayout";
 import { RequireAuth } from "./components/auth/RequireAuth";
+import { useIOSAppState } from "./hooks/use-ios-app-state";
 
 const queryClient = new QueryClient();
+
+const AppContent = () => {
+  // Hook para gerenciar estado no iOS
+  useIOSAppState();
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        
+        <Route path="/" element={
+          <RequireAuth>
+            <MainLayout />
+          </RequireAuth>
+        }>
+          <Route index element={<Index />} />
+          <Route path="gerenciar" element={<ManageProducts />} />
+          <Route path="detalhes/:id" element={<ProductDetails />} />
+          <Route path="cadastrar" element={<CreateProduct />} />
+          <Route path="editar/:id" element={<EditProduct />} />
+          <Route path="clientes" element={<ManageClientes />} />
+          <Route path="clientes/cadastrar" element={<CreateCliente />} />
+          <Route path="clientes/editar/:id" element={<EditCliente />} />
+          <Route path="clientes/detalhes/:id" element={<ClienteDetails />} />
+          <Route path="pedidos" element={<ManagePedidos />} />
+          <Route path="pedidos/criar" element={<CreatePedido />} />
+          <Route path="pedidos/editar/:id" element={<EditPedido />} />
+          <Route path="pedidos/detalhes/:id" element={<PedidoDetails />} />
+          <Route path="pagamentos" element={<ManagePagamentos />} />
+          <Route path="configuracoes" element={<Settings />} />
+          <Route path="dashboard" element={<Dashboard />} />
+        </Route>
+        
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -40,36 +79,7 @@ const App = () => (
             <PedidoProvider>
               <Toaster />
               <Sonner />
-              <BrowserRouter>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              
-              <Route path="/" element={
-                <RequireAuth>
-                  <MainLayout />
-                </RequireAuth>
-              }>
-                <Route index element={<Index />} />
-                <Route path="gerenciar" element={<ManageProducts />} />
-                <Route path="detalhes/:id" element={<ProductDetails />} />
-                <Route path="cadastrar" element={<CreateProduct />} />
-                <Route path="editar/:id" element={<EditProduct />} />
-                <Route path="clientes" element={<ManageClientes />} />
-                <Route path="clientes/cadastrar" element={<CreateCliente />} />
-                <Route path="clientes/editar/:id" element={<EditCliente />} />
-                <Route path="clientes/detalhes/:id" element={<ClienteDetails />} />
-                <Route path="pedidos" element={<ManagePedidos />} />
-                <Route path="pedidos/criar" element={<CreatePedido />} />
-                <Route path="pedidos/editar/:id" element={<EditPedido />} />
-                <Route path="pedidos/detalhes/:id" element={<PedidoDetails />} />
-                <Route path="pagamentos" element={<ManagePagamentos />} />
-                <Route path="configuracoes" element={<Settings />} />
-                <Route path="dashboard" element={<Dashboard />} />
-              </Route>
-              
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-              </BrowserRouter>
+              <AppContent />
             </PedidoProvider>
           </ClienteProvider>
         </ProductProvider>

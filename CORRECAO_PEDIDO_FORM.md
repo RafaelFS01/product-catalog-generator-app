@@ -107,6 +107,31 @@ interface ItemPedido {
 }
 ```
 
+# 🛠️ Correção: Seleção de Produto no Modal de Pedido
+
+## Problema Identificado
+
+Ao tentar adicionar um produto ao pedido, o Combobox do modal não selecionava o produto corretamente. O clique no produto tentava adicionar imediatamente ao pedido, sem permitir a escolha da quantidade, pois o onSelect estava chamando handleAddProduct ao invés de apenas selecionar o produto.
+
+## Solução Aplicada
+
+- O onSelect do Combobox agora define o produto selecionado usando setProdutoSelecionado, permitindo que o usuário escolha a quantidade antes de adicionar.
+- O botão "Adicionar ao Pedido" permanece responsável por adicionar o produto selecionado e a quantidade ao pedido.
+
+## Status
+
+✅ Correção aplicada e testada. O modal agora permite selecionar o produto, visualizar detalhes e escolher a quantidade normalmente antes de adicionar ao pedido.
+
+---
+
+### Arquivos Alterados
+- src/components/pedidos/PedidoForm.tsx
+
+---
+
+### Conclusão
+Correção concluída. O fluxo de adição de produto ao pedido está funcional e intuitivo.
+
 ---
 
 **✅ TAREFA COMPLETA**: O componente `PedidoForm` foi totalmente corrigido e está pronto para uso em produção. 

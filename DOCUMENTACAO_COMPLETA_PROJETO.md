@@ -405,6 +405,7 @@ interface CatalogConfig {
 - ✅ **Busca em Tempo Real**: Filtro de produtos instantâneo na criação de pedidos
 - ✅ **Performance Melhorada**: Otimizações no Combobox com useMemo
 - ✅ **UX Aprimorada**: Interface mais responsiva e intuitiva
+- ✅ **Corrigido bug no modal de adicionar produto ao pedido**: agora o Combobox permite selecionar o produto corretamente antes de adicionar, permitindo escolha de quantidade e visualização dos detalhes. (PedidoForm.tsx)
 
 ### **🆕 Sistema de Clientes e Pedidos Implementado (Nova Funcionalidade)**
 - ✅ **Sistema de Clientes Completo**: CRUD completo com validação PF/PJ
@@ -1620,7 +1621,7 @@ Esta aplicação representa uma implementação completa e profissional de um si
 - ✅ **Testing Coverage**: Unit, integration e performance testing
 
 ### **Business Value**
-- ✅ **Domain Modeling**: Entities, value objects, e business rules
+- ✅ **Domain Modeling**: Entidades, value objects, e business rules
 - ✅ **User Experience**: Design system coeso e workflows intuitivos
 - ✅ **Scalability**: Prepared for growth e feature expansion
 - ✅ **Maintainability**: Clean code, documentation, e monitoring
@@ -1719,4 +1720,9 @@ interface PagamentoPendente {
 
 **📋 Documentação Completa**: Ver `IMPLEMENTACAO_GERENCIAMENTO_PAGAMENTOS.md`
 
-**Status**: ✅ **IMPLEMENTAÇÃO CONCLUÍDA E FUNCIONAL** 
+**Status**: ✅ **IMPLEMENTAÇÃO CONCLUÍDA E FUNCIONAL**
+
+## 🆕 Melhorias Recentes
+
+- Cadastro de cliente: agora apenas o nome é obrigatório, todos os outros campos são opcionais.
+- Pedido: agora é possível criar pedido sem cliente, basta marcar a opção 'Pedido sem cliente' na tela de criação de pedido. 

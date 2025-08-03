@@ -24,6 +24,12 @@
 - ✅ Stack tecnológico detalhado
 - ✅ Instruções práticas e específicas
 
+## 🛠️ Correções Recentes
+
+- Corrigido: Seleção de produto no modal de pedido agora permite escolher o produto e a quantidade antes de adicionar ao pedido.
+- Cadastro de cliente: agora apenas o nome é obrigatório, todos os outros campos são opcionais.
+- Pedido: agora é possível criar pedido sem cliente, marcando a opção correspondente na tela de pedido.
+
 ---
 
 ## 📋 **CONTEÚDO DO NOVO README**

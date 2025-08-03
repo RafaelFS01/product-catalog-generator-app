@@ -239,6 +239,12 @@ Este é um projeto profissional em produção. Para alterações:
 
 Projeto proprietário - Todos os direitos reservados.
 
+## 🛠️ Correções e Melhorias Recentes
+
+- Corrigido: Seleção de produto no modal de pedido agora funciona corretamente, permitindo escolher o produto e a quantidade antes de adicionar ao pedido.
+- Cadastro de cliente: agora apenas o nome é obrigatório, todos os outros campos são opcionais.
+- Pedido: agora é possível criar pedido sem cliente, marcando a opção correspondente na tela de pedido.
+
 ---
 
 **📅 Última Atualização**: 21/12/2024  

@@ -484,9 +484,29 @@ export const PedidoPDFGenerator: React.FC<PedidoPDFGeneratorProps> = ({
       pdf.setFont(undefined, 'normal');
       pdf.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')}`, widthMm / 2, currentY, { align: 'center' });
       
-      // Salvar arquivo
+      // Salvar arquivo com comportamento melhorado para iOS
       const filename = `cupom-${cupomWidth}mm-${pedido.numero.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}.pdf`;
-      pdf.save(filename);
+      
+      // Detectar iOS Safari
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome|CriOS|FxiOS/.test(navigator.userAgent);
+      
+      if (isIOS || isSafari) {
+        // Para iOS, usar timeout para dar tempo do sistema processar
+        console.log('📱 iOS detectado - usando download otimizado para cupom fiscal');
+        setTimeout(() => {
+          pdf.save(filename);
+          // Adicionar flag para indicar que houve download
+          sessionStorage.setItem('ios-download-active', 'true');
+          
+          // Limpar flag após um tempo
+          setTimeout(() => {
+            sessionStorage.removeItem('ios-download-active');
+          }, 5000);
+        }, 100);
+      } else {
+        pdf.save(filename);
+      }
       
       toast.success(`Cupom fiscal ${cupomWidth}mm gerado com sucesso!`);
       

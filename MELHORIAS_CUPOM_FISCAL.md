@@ -37,6 +37,19 @@
 - Fontes padrão (8-12px)
 - Ideal para balcões tradicionais
 
-## ✅ **Status: COMPLETO e FUNCIONAL**
+## 🐛 **Correção de Bug iOS - 21/12/2024**
 
-A implementação está finalizada e testada, oferecendo flexibilidade total na geração de cupons fiscais com informações completas. 
+### **Problema Corrigido:**
+- ✅ **Bug no iPhone**: Aplicação "congelava" após gerar cupom fiscal
+- ✅ **Causa**: Perda de contexto JavaScript quando redirecionava para outros apps
+- ✅ **Solução**: Hook automático para restaurar estado em dispositivos iOS
+
+### **Melhorias Implementadas:**
+- ✅ **Detecção automática**: Sistema identifica iOS/Safari automaticamente
+- ✅ **Restauração inteligente**: Event listeners são restaurados após mudança de app
+- ✅ **Compatibilidade total**: Funciona perfeitamente em iPhone/iPad
+- ✅ **Sem impacto**: Não afeta funcionamento em outros navegadores
+
+## ✅ **Status: COMPLETO, FUNCIONAL e COMPATÍVEL com iOS**
+
+A implementação está finalizada e testada, oferecendo flexibilidade total na geração de cupons fiscais com informações completas. **Agora com correção específica para dispositivos iOS/Safari**. 

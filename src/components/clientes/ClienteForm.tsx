@@ -16,48 +16,18 @@ const clienteSchema = z.object({
   nome: z.string()
     .min(2, 'Nome deve ter pelo menos 2 caracteres')
     .max(100, 'Nome não pode exceder 100 caracteres'),
-  
-  tipo: z.enum(['PF', 'PJ'], { required_error: 'Selecione o tipo de cliente' }),
-  
-  documento: z.string()
-    .min(11, 'Documento deve ter pelo menos 11 dígitos')
-    .max(18, 'Documento muito longo')
-    .transform(val => val.replace(/[^\d]/g, '')), // Remove formatação
-    
-  telefone: z.string()
-    .min(10, 'Telefone deve ter pelo menos 10 dígitos')
-    .max(15, 'Telefone muito longo'),
-    
-  email: z.string()
-    .email('E-mail inválido')
-    .min(5, 'E-mail deve ter pelo menos 5 caracteres'),
-    
+  tipo: z.enum(['PF', 'PJ']).optional(),
+  documento: z.string().optional(),
+  telefone: z.string().optional(),
+  email: z.string().optional(),
   endereco: z.object({
-    rua: z.string()
-      .min(5, 'Rua deve ter pelo menos 5 caracteres')
-      .max(100, 'Rua não pode exceder 100 caracteres'),
-      
-    numero: z.string()
-      .min(1, 'Número é obrigatório')
-      .max(10, 'Número muito longo'),
-      
-    bairro: z.string()
-      .min(2, 'Bairro deve ter pelo menos 2 caracteres')
-      .max(50, 'Bairro não pode exceder 50 caracteres'),
-      
-    cidade: z.string()
-      .min(2, 'Cidade deve ter pelo menos 2 caracteres')
-      .max(50, 'Cidade não pode exceder 50 caracteres'),
-      
-    estado: z.string()
-      .min(2, 'Estado deve ter 2 caracteres')
-      .max(2, 'Estado deve ter 2 caracteres'),
-      
-    cep: z.string()
-      .min(8, 'CEP deve ter 8 dígitos')
-      .max(9, 'CEP inválido')
-      .transform(val => val.replace(/[^\d]/g, '')) // Remove formatação
-  })
+    rua: z.string().optional(),
+    numero: z.string().optional(),
+    bairro: z.string().optional(),
+    cidade: z.string().optional(),
+    estado: z.string().optional(),
+    cep: z.string().optional()
+  }).optional()
 });
 
 type ClienteFormData = z.infer<typeof clienteSchema>;
@@ -104,31 +74,47 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ cliente, isEditing = false })
   useEffect(() => {
     if (cliente && isEditing) {
       reset({
-        nome: cliente.nome,
-        tipo: cliente.tipo,
-        documento: cliente.documento,
-        telefone: cliente.telefone,
-        email: cliente.email,
-        endereco: cliente.endereco
-      });
+        nome: cliente.nome || '',
+        tipo: cliente.tipo ?? '',
+        documento: cliente.documento ?? '',
+        telefone: cliente.telefone ?? '',
+        email: cliente.email ?? '',
+        endereco: {
+          rua: cliente.endereco?.rua ?? '',
+          numero: cliente.endereco?.numero ?? '',
+          bairro: cliente.endereco?.bairro ?? '',
+          cidade: cliente.endereco?.cidade ?? '',
+          estado: cliente.endereco?.estado ?? '',
+          cep: cliente.endereco?.cep ?? ''
+        }
+      } as ClienteFormData);
     }
   }, [cliente, isEditing, reset]);
 
   const onSubmit = async (data: ClienteFormData) => {
     setIsSubmitting(true);
-    
     try {
-      // Validar documento baseado no tipo
-      if (!validateDocumento(data.documento, data.tipo)) {
-        throw new Error(`Formato de ${data.tipo === 'PF' ? 'CPF' : 'CNPJ'} inválido`);
-      }
-
+      // Montar objeto completo para o contexto
+      const clientePayload: Omit<Cliente, 'id' | 'timestampCriacao' | 'timestampAtualizacao'> = {
+        nome: data.nome || '',
+        tipo: (data.tipo as 'PF' | 'PJ') || 'PF',
+        documento: data.documento || '',
+        telefone: data.telefone || '',
+        email: data.email || '',
+        endereco: {
+          rua: data.endereco?.rua || '',
+          numero: data.endereco?.numero || '',
+          bairro: data.endereco?.bairro || '',
+          cidade: data.endereco?.cidade || '',
+          estado: data.endereco?.estado || '',
+          cep: data.endereco?.cep || ''
+        }
+      };
       if (isEditing && cliente) {
-        await updateCliente(cliente.id, data);
+        await updateCliente(cliente.id, clientePayload);
       } else {
-        await createCliente(data);
+        await createCliente(clientePayload);
       }
-      
       navigate('/clientes');
     } catch (error) {
       console.error('Erro ao salvar cliente:', error);
@@ -228,9 +214,7 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ cliente, isEditing = false })
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="documento">
-                  {tipoWatch === 'PF' ? 'CPF' : 'CNPJ'} *
-                </Label>
+                <Label htmlFor="documento">{tipoWatch === 'PF' ? 'CPF' : 'CNPJ'}</Label>
                 <Input
                   id="documento"
                   placeholder={tipoWatch === 'PF' ? '000.000.000-00' : '00.000.000/0000-00'}
@@ -247,7 +231,7 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ cliente, isEditing = false })
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="telefone">Telefone *</Label>
+                <Label htmlFor="telefone">Telefone</Label>
                 <Input
                   id="telefone"
                   placeholder="(00) 00000-0000"
@@ -265,7 +249,7 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ cliente, isEditing = false })
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">E-mail *</Label>
+              <Label htmlFor="email">E-mail</Label>
               <Input
                 id="email"
                 type="email"
@@ -283,7 +267,7 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ cliente, isEditing = false })
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2 space-y-2">
-                  <Label htmlFor="rua">Rua/Avenida *</Label>
+                  <Label htmlFor="rua">Rua/Avenida</Label>
                   <Input
                     id="rua"
                     placeholder="Rua das Flores"
@@ -295,7 +279,7 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ cliente, isEditing = false })
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="numero">Número *</Label>
+                  <Label htmlFor="numero">Número</Label>
                   <Input
                     id="numero"
                     placeholder="123"
@@ -309,7 +293,7 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ cliente, isEditing = false })
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="bairro">Bairro *</Label>
+                  <Label htmlFor="bairro">Bairro</Label>
                   <Input
                     id="bairro"
                     placeholder="Centro"
@@ -321,7 +305,7 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ cliente, isEditing = false })
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="cep">CEP *</Label>
+                  <Label htmlFor="cep">CEP</Label>
                   <Input
                     id="cep"
                     placeholder="00000-000"
@@ -340,7 +324,7 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ cliente, isEditing = false })
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="cidade">Cidade *</Label>
+                  <Label htmlFor="cidade">Cidade</Label>
                   <Input
                     id="cidade"
                     placeholder="São Paulo"
@@ -352,7 +336,7 @@ const ClienteForm: React.FC<ClienteFormProps> = ({ cliente, isEditing = false })
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="estado">Estado (UF) *</Label>
+                  <Label htmlFor="estado">Estado (UF)</Label>
                   <Input
                     id="estado"
                     placeholder="SP"

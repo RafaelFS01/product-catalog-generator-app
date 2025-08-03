@@ -219,4 +219,10 @@ A documentação principal está em **excelente estado**, refletindo fielmente:
 - [ ] Criar diagramas visuais dos fluxos
 - [ ] Documentar possíveis APIs futuras
 
-**Status Final**: ✅ **TODA A DOCUMENTAÇÃO ESTÁ ATUALIZADA E COMPLETA** 
+**Status Final**: ✅ **TODA A DOCUMENTAÇÃO ESTÁ ATUALIZADA E COMPLETA**
+
+## 🛠️ Correções Importantes
+
+- Seleção de produto no modal de pedido corrigida: agora o usuário pode selecionar o produto e definir a quantidade normalmente antes de adicionar ao pedido.
+- Cadastro de cliente: agora apenas o nome é obrigatório, todos os outros campos são opcionais.
+- Pedido: agora é possível criar pedido sem cliente, marcando a opção correspondente na tela de pedido. 

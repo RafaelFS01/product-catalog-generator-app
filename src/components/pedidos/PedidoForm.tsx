@@ -37,7 +37,7 @@ const itemPedidoSchema = z.object({
 });
 
 const pedidoSchema = z.object({
-  clienteId: z.string().min(1, 'Cliente é obrigatório'),
+  clienteId: z.string().optional(),
   itens: z.array(itemPedidoSchema).min(1, 'Adicione pelo menos um item ao pedido'),
   dataLimitePagamento: z.string().min(1, 'Data limite de pagamento é obrigatória'),
   observacoes: z.string().optional()
@@ -60,6 +60,7 @@ const PedidoForm: React.FC<PedidoFormProps> = ({ pedido, isEditing = false }) =>
   const [produtoSelecionado, setProdutoSelecionado] = useState<Product | null>(null);
   const [quantidadeProduto, setQuantidadeProduto] = useState(1);
   const [itemToRemove, setItemToRemove] = useState<number | null>(null);
+  const [semCliente, setSemCliente] = useState(false);
   const navigate = useNavigate();
 
   const {
@@ -108,7 +109,7 @@ const PedidoForm: React.FC<PedidoFormProps> = ({ pedido, isEditing = false }) =>
   }, [pedido, isEditing, reset, clientes]);
 
   const onSubmit = async (data: PedidoFormData) => {
-    if (!clienteSelecionado) {
+    if (!clienteSelecionado && !semCliente) {
       return;
     }
 
@@ -116,12 +117,13 @@ const PedidoForm: React.FC<PedidoFormProps> = ({ pedido, isEditing = false }) =>
     
     try {
       const pedidoData = {
-        clienteId: data.clienteId,
-        cliente: {
-          nome: clienteSelecionado.nome,
-          documento: clienteSelecionado.documento,
-          tipo: clienteSelecionado.tipo
-        },
+        ...(clienteSelecionado ? {
+          cliente: {
+            nome: clienteSelecionado.nome,
+            documento: clienteSelecionado.documento,
+            tipo: clienteSelecionado.tipo
+          }
+        } : {}),
         itens: data.itens as ItemPedido[],
         valorTotal,
         status: 'EM_ABERTO' as const,
@@ -232,6 +234,21 @@ const PedidoForm: React.FC<PedidoFormProps> = ({ pedido, isEditing = false }) =>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <input
+                  type="checkbox"
+                  id="semCliente"
+                  checked={semCliente}
+                  onChange={e => {
+                    setSemCliente(e.target.checked);
+                    if (e.target.checked) {
+                      setClienteSelecionado(null);
+                      setValue('clienteId', '');
+                    }
+                  }}
+                />
+                <Label htmlFor="semCliente">Pedido sem cliente</Label>
+              </div>
               <div className="space-y-2">
                 <Label>Cliente *</Label>
                 <Combobox
@@ -239,7 +256,7 @@ const PedidoForm: React.FC<PedidoFormProps> = ({ pedido, isEditing = false }) =>
                   value={clienteSelecionado?.id || ''}
                   onSelect={handleClienteSelect}
                   placeholder="Buscar cliente..."
-                  disabled={loadingClientes}
+                  disabled={loadingClientes || semCliente}
                 />
                 {errors.clienteId && (
                   <p className="text-sm text-destructive">{errors.clienteId.message}</p>
@@ -446,7 +463,10 @@ const PedidoForm: React.FC<PedidoFormProps> = ({ pedido, isEditing = false }) =>
               <Combobox
                 options={productOptions}
                 value={produtoSelecionado?.id || ''}
-                onSelect={handleAddProduct}
+                onSelect={(produtoId) => {
+                  const produto = products.find(p => p.id === produtoId) || null;
+                  setProdutoSelecionado(produto);
+                }}
                 placeholder="Buscar produto..."
                 disabled={loadingProducts}
               />

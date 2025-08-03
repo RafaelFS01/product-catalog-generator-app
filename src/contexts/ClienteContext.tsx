@@ -75,15 +75,10 @@ export const ClienteProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const createCliente = async (cliente: Omit<Cliente, 'id' | 'timestampCriacao' | 'timestampAtualizacao'>): Promise<Cliente> => {
     try {
-      // Validar se documento já existe
-      const documentoExistente = clientes.find(c => c.documento === cliente.documento);
-      if (documentoExistente) {
-        throw new Error('Já existe um cliente cadastrado com este documento');
-      }
-
-      // Validar formato do documento
-      if (!validateDocumento(cliente.documento, cliente.tipo)) {
-        throw new Error(`Formato de ${cliente.tipo === 'PF' ? 'CPF' : 'CNPJ'} inválido`);
+      if (cliente.documento && cliente.tipo) {
+        if (!validateDocumento(cliente.documento, cliente.tipo)) {
+          throw new Error(`Formato de ${cliente.tipo === 'PF' ? 'CPF' : 'CNPJ'} inválido`);
+        }
       }
 
       const timestamp = Date.now();
